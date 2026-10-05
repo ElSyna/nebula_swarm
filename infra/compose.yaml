@@ -1,0 +1,63 @@
+# ===========================================================================
+# Ce qui vit A COTE du cluster : sur le manager, mais hors Swarm.
+#
+#   ./infra/up.sh          (prepare certificats et comptes, puis demarre)
+#
+# Registry : s'il etait un service Swarm, redemarrer le cluster demanderait
+# de tirer des images, et tirer des images demanderait que le cluster tourne.
+# Ici il redemarre avec le daemon Docker de la machine, avant le Swarm.
+#
+# Portainer : outil d'administration. Il n'ecoute que sur 127.0.0.1 : on ne
+# l'atteint que par un tunnel SSH, puis avec son mot de passe.
+# ===========================================================================
+name: nebula-infra
+
+services:
+
+  registry:
+    # Miroir public des images officielles : Docker Hub limite les tirages
+    # par adresse IP, et celle du reseau est partagee.
+    image: public.ecr.aws/docker/library/registry:3
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Nebula
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
+      REGISTRY_HTTP_TLS_KEY: /certs/registry.key
+      # Necessaire au ramasse-miettes (suppression d'anciennes images).
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - registry_data:/var/lib/registry
+      - ${INFRA_HOME:-/srv/nebula}/registry/auth:/auth:ro
+      - ${INFRA_HOME:-/srv/nebula}/registry/certs:/certs:ro
+    deploy:
+      resources:
+        limits: { memory: 256M }
+
+  portainer:
+    image: portainer/portainer-ce:2.21.5
+    restart: unless-stopped
+    # Mot de passe administrateur impose par fichier : Portainer se verrouille
+    # si personne ne l'initialise dans les cinq minutes.
+    command: --admin-password-file /run/secrets/portainer_password
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    secrets:
+      - portainer_password
+    deploy:
+      resources:
+        limits: { memory: 256M }
+
+volumes:
+  registry_data:
+  portainer_data:
+
+secrets:
+  portainer_password:
+    file: ${INFRA_HOME:-/srv/nebula}/portainer/admin_password
