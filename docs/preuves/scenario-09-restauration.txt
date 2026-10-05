@@ -1,0 +1,49 @@
+# Scenario 9 : panne du plan de donnees
+# releve du 2026-10-05 13:50 UTC
+
+## A. arret puis relance de la base : la donnee est toujours la
+
+[manager] $ curl -s localhost/api/comptes/1
+{"id":1,"pseudo":"ada","cree_le":"2026-10-05T13:02:39.227Z"}
+[manager] $ docker service scale nebula_db=0
+nebula_db scaled to 0
+[manager] $ curl localhost/api/comptes/1   -> HTTP 500 (base arretee)
+[manager] $ docker service scale nebula_db=1
+nebula_db scaled to 1
+[manager] $ curl -s localhost/api/comptes/1
+{"id":1,"pseudo":"ada","cree_le":"2026-10-05T13:02:39.227Z"}
+
+## B. perte du volume de la base, puis restauration
+
+[manager] $ make backup
+
+== sauvegarde de la base vers /srv/nebula/backups/nebula-20261005T135056Z.dump
+   tables : 2
+   comptes : 10
+   publications : 11
+-rw-r--r-- 1 root root 6.1K Oct  5 13:51 /srv/nebula/backups/nebula-20261005T135056Z.dump
+
+[manager] $ docker service scale nebula_db=0
+nebula_db scaled to 0
+[worker1] $ docker rm $(docker ps -aq --filter volume=nebula_db_data); docker volume rm nebula_db_data
+nebula_db_data
+[manager] $ docker service scale nebula_db=1
+nebula_db scaled to 1
+
+# base neuve, initialisee par db/init.sql : les donnees ont disparu
+[manager] $ curl -s localhost/api/fil
+{"source":"db","items":[]}
+[manager] $ curl localhost/api/comptes/3   -> HTTP 404
+
+[manager] $ time make restore
+
+== restauration de /srv/nebula/backups/nebula-20261005T135056Z.dump
+   comptes : 10
+   publications : 11
+   restauration terminee (le cache du fil expire en 30 s)
+duree : 5 s
+
+[manager] $ curl -s localhost/api/comptes/3
+{"id":3,"pseudo":"smoke-1791205669-6784","cree_le":"2026-10-05T13:07:49.706Z"}
+[manager] $ curl -s localhost/api/fil | head -c 160      (apres expiration du cache, 30 s)
+{"source":"db","items":[{"id":11,"auteur_id":10,"titre":"smoke","cree_le":"2026-10-05T13:47:46.241Z"},{"id":10,"auteur_id":9,"titre":"smoke","cree_le":"2026-10-

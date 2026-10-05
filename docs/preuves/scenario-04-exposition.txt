@@ -1,0 +1,41 @@
+# Scenario 4 : controle de l'exposition
+# releve du 2026-10-05 13:47 UTC, sur le manager, dans ~/nebula
+
+$ make exposition
+
+== ports publies par le cluster
+NAME                   PORTS
+edge_traefik           *:80->80/tcp
+nebula_bus             
+nebula_cache           
+nebula_comptes         
+nebula_db              
+nebula_publications    
+nebula_worker-medias   
+
+== ports qui repondent, noeud par noeud
+manager   10.96.253.211   80=OUVERT 5432=ferme 5672=ferme 15672=ferme 6379=ferme 3000=ferme 8080=ferme 9000=ferme 5000=OUVERT
+worker1   10.96.253.212   80=OUVERT 5432=ferme 5672=ferme 15672=ferme 6379=ferme 3000=ferme 8080=ferme 9000=ferme 5000=ferme
+worker2   10.96.253.213   80=OUVERT 5432=ferme 5672=ferme 15672=ferme 6379=ferme 3000=ferme 8080=ferme 9000=ferme 5000=ferme
+
+legende : 80:edge 5432:postgres 5672:amqp 15672:rabbitmq-admin 6379:redis 3000:applications 8080:traefik 9000:portainer 5000:registry
+
+$ ss -tln   (ports en ecoute sur le manager, hors Swarm et hors systeme)
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                   
+LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    sshd
+LISTEN 0      4096         0.0.0.0:80        0.0.0.0:*    docker-proxy
+LISTEN 0      4096       127.0.0.1:9000      0.0.0.0:*    docker-proxy
+LISTEN 0      4096         0.0.0.0:5000      0.0.0.0:*    docker-proxy
+LISTEN 0      128             [::]:22           [::]:*    sshd
+LISTEN 0      4096            [::]:80           [::]:*    docker-proxy
+LISTEN 0      4096               *:2377            *:*    dockerd
+LISTEN 0      4096            [::]:5000         [::]:*    docker-proxy
+LISTEN 0      4096               *:7946            *:*    dockerd
+
+# Portainer : 127.0.0.1 uniquement
+curl http://127.0.0.1:9000      -> HTTP 200
+curl http://10.96.253.211:9000  -> HTTP 000 (000 : connexion refusee)
+
+# indicateurs de l edge : mot de passe exige
+curl http://127.0.0.1/metrics                -> HTTP 401
+curl -u admin:*** http://127.0.0.1/metrics    -> HTTP 200

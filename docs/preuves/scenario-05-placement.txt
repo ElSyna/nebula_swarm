@@ -1,0 +1,45 @@
+# Scenario 5 : placement
+# releve du 2026-10-05 13:47 UTC, sur le manager, dans ~/nebula
+
+$ make status
+
+== noeuds
+HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+manager    Ready     Active         Leader           29.8.2
+worker1    Ready     Active                          29.8.2
+worker2    Ready     Active                          29.8.2
+   manager  10.96.253.211  labels=map[tier:app]
+   worker1  10.96.253.212  labels=map[tier:data]
+   worker2  10.96.253.213  labels=map[tier:app]
+
+== services
+NAME                   MODE         REPLICAS   IMAGE                                                     PORTS
+edge_traefik           replicated   2/2        registry.local:5000/mirror/traefik:v3.6.25                *:80->80/tcp
+nebula_bus             replicated   1/1        registry.local:5000/mirror/rabbitmq:4-management-alpine   
+nebula_cache           replicated   1/1        registry.local:5000/mirror/redis:7-alpine                 
+nebula_comptes         replicated   3/3        registry.local:5000/nebula-comptes:v1.0.0                 
+nebula_db              replicated   1/1        registry.local:5000/mirror/postgres:18-alpine             
+nebula_publications    replicated   3/3        registry.local:5000/nebula-publications:v1.0.0            
+nebula_worker-medias   replicated   2/2        registry.local:5000/nebula-worker-medias:v1.0.0           
+
+== instances (service, version, machine)
+edge_traefik.1          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 22 seconds ago
+edge_traefik.2          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 22 seconds ago
+nebula_bus.1            registry.local:5000/mirror/rabbitmq:4-management-alpine  worker1  Running 20 seconds ago
+nebula_cache.1          registry.local:5000/mirror/redis:7-alpine                worker2  Running 23 seconds ago
+nebula_comptes.1        registry.local:5000/nebula-comptes:v1.0.0                worker2  Running 11 seconds ago
+nebula_comptes.2        registry.local:5000/nebula-comptes:v1.0.0                manager  Running 21 seconds ago
+nebula_comptes.3        registry.local:5000/nebula-comptes:v1.0.0                worker2  Running 10 seconds ago
+nebula_db.1             registry.local:5000/mirror/postgres:18-alpine            worker1  Running 25 seconds ago
+nebula_publications.1   registry.local:5000/nebula-publications:v1.0.0           manager  Running 14 seconds ago
+nebula_publications.2   registry.local:5000/nebula-publications:v1.0.0           worker2  Running 10 seconds ago
+nebula_publications.3   registry.local:5000/nebula-publications:v1.0.0           worker2  Running 10 seconds ago
+nebula_worker-medias.1  registry.local:5000/nebula-worker-medias:v1.0.0          worker2  Running 10 seconds ago
+nebula_worker-medias.2  registry.local:5000/nebula-worker-medias:v1.0.0          manager  Running 22 seconds ago
+
+$ grep -n -B1 "node\." swarm/stack.nebula.yml swarm/stack.edge.yml
+swarm/stack.nebula.yml:42:    constraints: [node.labels.tier == app]
+swarm/stack.nebula.yml:168:        constraints: [node.labels.tier == data]
+swarm/stack.nebula.yml:201:        constraints: [node.labels.tier == app]
+swarm/stack.nebula.yml:237:        constraints: [node.labels.tier == data]
+swarm/stack.edge.yml:63:        constraints: [node.role == manager]

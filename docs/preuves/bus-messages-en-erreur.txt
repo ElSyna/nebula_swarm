@@ -1,0 +1,17 @@
+# Bus : visibilite des messages en erreur
+# releve du 2026-10-05 13:52 UTC, sur le manager, dans ~/nebula
+
+$ make bus
+   "consumers":2,"messages":0,"name":"publications"
+   "consumers":0,"messages":0,"name":"publications.erreurs"
+
+$ ./scripts/bus.sh poison        (publie un message que le worker ne sait pas lire)
+{"routed":true}
+   message invalide publie : il doit apparaitre dans publications.erreurs
+
+$ docker service logs --since 30s nebula_worker-medias
+nebula_worker-medias.1.j221cpy1i0ui@worker2    | [worker] Unexpected token 'm', "message invalide" is not valid JSON
+
+$ make bus
+   "consumers":2,"messages":0,"name":"publications"
+   "consumers":0,"messages":1,"name":"publications.erreurs"

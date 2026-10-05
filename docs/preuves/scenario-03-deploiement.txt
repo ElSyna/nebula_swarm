@@ -1,0 +1,108 @@
+# Scenario 3 : deploiement depuis zero (destruction puis redeploiement)
+# releve du 2026-10-05 13:46 UTC, sur le manager, dans ~/nebula
+
+$ time make destroy
+Removing service nebula_bus
+Removing service nebula_cache
+Removing service nebula_comptes
+Removing service nebula_db
+Removing service nebula_publications
+Removing service nebula_worker-medias
+Removing config nebula_db_init_v1
+Removing config nebula_bus_conf_v1
+Removing config nebula_entrypoint_v1
+Removing network nebula_internal
+Removing service edge_traefik
+Removing network edge_public
+ID        NAME      MODE      REPLICAS   IMAGE     PORTS
+duree : 21 s
+
+$ time make deploy TAG=v1.0.0
+
+== 1. prerequis
+   secrets, etiquettes et images v1.0.0 presents
+
+== 2. edge
+Creating network edge_public
+Creating service edge_traefik
+
+== 3. nebula (v1.0.0)
+Creating network nebula_internal
+Creating config nebula_entrypoint_v1
+Creating config nebula_db_init_v1
+Creating config nebula_bus_conf_v1
+Creating service nebula_db
+Creating service nebula_cache
+Creating service nebula_bus
+Creating service nebula_comptes
+Creating service nebula_publications
+Creating service nebula_worker-medias
+
+== 4. convergence
+   +  2s  en attente : edge_traefik nebula_bus nebula_cache nebula_comptes nebula_db nebula_publications nebula_worker-medias 
+   + 13s  en attente : edge_traefik nebula_bus nebula_cache nebula_comptes nebula_publications nebula_worker-medias 
+   + 16s  en attente : nebula_bus nebula_comptes nebula_publications nebula_worker-medias 
+   + 18s  en attente : nebula_comptes nebula_publications nebula_worker-medias 
+   + 29s  tous les services sont a leur nombre d instances
+
+== 5. l'edge route les services
+   /health/comptes : HTTP 200
+   /health/publications : HTTP 200
+
+== noeuds
+HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+manager    Ready     Active         Leader           29.8.2
+worker1    Ready     Active                          29.8.2
+worker2    Ready     Active                          29.8.2
+   manager  10.96.253.211  labels=map[tier:app]
+   worker1  10.96.253.212  labels=map[tier:data]
+   worker2  10.96.253.213  labels=map[tier:app]
+
+== services
+NAME                   MODE         REPLICAS   IMAGE                                                     PORTS
+edge_traefik           replicated   2/2        registry.local:5000/mirror/traefik:v3.6.25                *:80->80/tcp
+nebula_bus             replicated   1/1        registry.local:5000/mirror/rabbitmq:4-management-alpine   
+nebula_cache           replicated   1/1        registry.local:5000/mirror/redis:7-alpine                 
+nebula_comptes         replicated   3/3        registry.local:5000/nebula-comptes:v1.0.0                 
+nebula_db              replicated   1/1        registry.local:5000/mirror/postgres:18-alpine             
+nebula_publications    replicated   3/3        registry.local:5000/nebula-publications:v1.0.0            
+nebula_worker-medias   replicated   2/2        registry.local:5000/nebula-worker-medias:v1.0.0           
+
+== instances (service, version, machine)
+edge_traefik.1          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 14 seconds ago
+edge_traefik.2          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 14 seconds ago
+nebula_bus.1            registry.local:5000/mirror/rabbitmq:4-management-alpine  worker1  Running 12 seconds ago
+nebula_cache.1          registry.local:5000/mirror/redis:7-alpine                worker2  Running 15 seconds ago
+nebula_comptes.1        registry.local:5000/nebula-comptes:v1.0.0                worker2  Running 3 seconds ago
+nebula_comptes.2        registry.local:5000/nebula-comptes:v1.0.0                manager  Running 13 seconds ago
+nebula_comptes.3        registry.local:5000/nebula-comptes:v1.0.0                worker2  Running 2 seconds ago
+nebula_db.1             registry.local:5000/mirror/postgres:18-alpine            worker1  Running 17 seconds ago
+nebula_publications.1   registry.local:5000/nebula-publications:v1.0.0           manager  Running 6 seconds ago
+nebula_publications.2   registry.local:5000/nebula-publications:v1.0.0           worker2  Running 2 seconds ago
+nebula_publications.3   registry.local:5000/nebula-publications:v1.0.0           worker2  Running 2 seconds ago
+nebula_worker-medias.1  registry.local:5000/nebula-worker-medias:v1.0.0          worker2  Running 2 seconds ago
+nebula_worker-medias.2  registry.local:5000/nebula-worker-medias:v1.0.0          manager  Running 14 seconds ago
+
+duree : 31 s
+
+$ make smoke
+== chaine applicative sur http://127.0.0.1
+  sante de comptes                              OK
+  sante de publications                         OK
+  creation d'un compte (id=10)                  OK
+  lecture du compte                             OK
+  publication, auteur verifie (id=11)           OK
+  auteur inconnu refuse (HTTP 400)              OK
+  fil : 1re lecture depuis la base (db)         OK
+  fil : 2e lecture depuis le cache (cache)      OK
+
+== repartition : 12 appels par service (nombre, service, version, conteneur)
+      4 comptes v1.0.0 334869295c7e
+      3 comptes v1.0.0 a9ddd5b799cc
+      5 comptes v1.0.0 c71099369929
+      4 publications v1.0.0 2881b4c4d7f1
+      4 publications v1.0.0 8bf1898b1788
+      4 publications v1.0.0 cdf232dd95fa
+
+== asynchrone : la trace de la publication 11 est ecrite par le worker
+   docker service logs --since 1m nebula_worker-medias | grep publication-11

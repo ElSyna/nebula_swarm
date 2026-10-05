@@ -1,0 +1,35 @@
+# Scenario 6 : montee en charge d'un service sans etat (comptes, 3 -> 6 instances)
+# releve du 2026-10-05 13:48 UTC, sur le manager, dans ~/nebula
+
+$ make charge D=45 &          (requetes en continu sur /health/comptes)
+$ make scale S=comptes N=6
+nebula_comptes scaled to 6
+verify: Service nebula_comptes converged
+
+$ docker service ps nebula_comptes -f desired-state=running
+NAME               NODE      CURRENT STATE
+nebula_comptes.1   worker2   Running 51 seconds ago
+nebula_comptes.2   manager   Running about a minute ago
+nebula_comptes.3   worker2   Running 50 seconds ago
+nebula_comptes.4   manager   Running 15 seconds ago
+nebula_comptes.5   worker2   Running 17 seconds ago
+nebula_comptes.6   manager   Running 15 seconds ago
+
+# bilan des requetes : les 3 nouveaux conteneurs recoivent du trafic
+== 45 s de requetes sur http://127.0.0.1/health/comptes
+
+-- par code HTTP et version
+    517 200 v1.0.0
+-- par conteneur
+    112 334869295c7e
+     62 4858bbb42068
+     61 4a76b17acdac
+     60 5fb72b9e1b38
+    111 a9ddd5b799cc
+    111 c71099369929
+
+bilan : 517 requetes abouties sur 517, 0 en echec
+
+$ make scale S=comptes N=3
+nebula_comptes scaled to 3
+verify: Service nebula_comptes converged

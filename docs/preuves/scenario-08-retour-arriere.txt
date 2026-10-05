@@ -1,0 +1,32 @@
+# Scenario 8 : version defectueuse puis retour arriere, chronometre
+# releve du 2026-10-05 13:49 UTC, sur le manager, dans ~/nebula
+
+$ make drill S=comptes M=sonde
+
+== 1. version en place : registry.local:5000/nebula-comptes:v1.0.0
+   version defectueuse publiee : registry.local:5000/nebula-comptes:v1.0.0-defaut-sonde
+
+== 2. mise a jour vers la version defectueuse (requetes en continu en parallele)
+   +  0s  updating
+   + 51s  rollback_started
+   + 55s  rollback_completed
+
+== 3. constat
+   nebula_comptes.1	registry.local:5000/nebula-comptes:v1.0.0	worker2	Running 2 minutes ago	
+   nebula_comptes.2	registry.local:5000/nebula-comptes:v1.0.0	manager	Running 2 minutes ago	
+   nebula_comptes.3	registry.local:5000/nebula-comptes:v1.0.0-defaut-sonde	manager	Shutdown 3 seconds ago	
+   nebula_comptes.3	registry.local:5000/nebula-comptes:v1.0.0-defaut-sonde	manager	Failed 5 seconds ago	"task: non-zero exit (143): dockerexec: unhealthy container"
+   nebula_comptes.3	registry.local:5000/nebula-comptes:v1.0.0	worker2	Running 2 minutes ago	
+   message : rollback completed
+   image du service : registry.local:5000/nebula-comptes:v1.0.0@sha256:85980af6744a702adfba8c13964673748c55e77876eb297760a644e926850c8d
+   etat final : rollback_completed, 55 s entre la mise a jour et la fin du retour arriere
+
+== 4. requetes emises pendant l'incident
+-- par code HTTP et version
+    639 200 v1.0.0
+-- par conteneur
+    213 334869295c7e
+    213 a9ddd5b799cc
+    213 c71099369929
+
+bilan : 639 requetes abouties sur 639, 0 en echec

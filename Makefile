@@ -27,8 +27,12 @@ smoke: ## Verifie la chaine applicative complete
 	./scripts/smoke.sh
 charge: ## Requetes en continu et bilan                (D=60 P=/health/comptes)
 	./scripts/charge.sh $(or $(D),60) $(or $(P),/health/comptes)
-logs: ## Journaux d'un service                       (S=comptes)
+logs: ## Journaux d'un service, ou d'une instance   (S=comptes [I=2])
+ifdef I
+	docker service logs --tail 50 --timestamps $$(docker service ps -q -f desired-state=running -f name=nebula_$(or $(S),comptes).$(I) nebula_$(or $(S),comptes) | head -1)
+else
 	docker service logs --tail 50 --timestamps nebula_$(or $(S),comptes)
+endif
 scale: ## Change le nombre d'instances                (S=comptes N=5)
 	docker service scale nebula_$(S)=$(N)
 rollback: ## Retour arriere d'un service                 (S=comptes)
