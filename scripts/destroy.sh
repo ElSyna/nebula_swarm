@@ -6,10 +6,17 @@ set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 sur_manager
 
-docker stack rm --detach=false "$STACK" edge 2>&1 | grep -v '^$' || true
-# Un redeploiement immediat echoue tant que les reseaux ne sont pas liberes.
-for _ in $(seq 1 60); do
-  [ -z "$(docker network ls -q --filter name=nebula_internal --filter name=edge_public)" ] && break
+docker stack rm "$STACK" edge 2>&1 | grep -v '^$' || true
+
+# docker stack rm rend la main avant la fin des arrets. Un redeploiement
+# immediat echouerait : on attend que les taches et les reseaux aient disparu.
+reste=x
+for _ in $(seq 1 90); do
+  reste=$(docker stack ps -q "$STACK" 2>/dev/null || true
+          docker stack ps -q edge 2>/dev/null || true
+          docker network ls -q --filter name=nebula_internal --filter name=edge_public)
+  [ -z "$reste" ] && break
   sleep 1
 done
-docker service ls
+[ -z "$reste" ] || erreur "des taches ou des reseaux sont encore presents apres 90 s (docker stack ps $STACK)"
+echo "   stacks retirees, volumes et secrets conserves"
