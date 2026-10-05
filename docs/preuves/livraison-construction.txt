@@ -1,0 +1,124 @@
+# Livraison : construction, analyse, tag et publication de v1.1.0
+# releve du 2026-10-05 13:56 UTC, sur le manager, dans ~/nebula
+
+# commande lancee par le workflow CI sur un tag de version (.github/workflows/ci.yml)
+
+$ git describe --tags && git rev-parse --short HEAD
+v1.1.0
+4abb539
+
+$ time ./scripts/build-push.sh v1.1.0
+
+== 1. controle : ni v1.1.0 ni sha-4abb539 ne doivent deja exister dans registry.local:5000
+   libre
+
+== 2. construction (v1.1.0, sha-4abb539)
+sha256:cc4168d5dca22dfced0b956e2a655b8507664c5247b6d5293ed443f3b76e8a2e
+sha256:4e5310c1aa54fcc6f5f01d54ec9f8579dfc0f28238c3b2f876a80e168ca79f70
+sha256:908e755de2c48d53a5891743b3e3bf3cd2b2b7d33af9773e3cf90e34f07b0589
+
+== 3. analyse de vulnerabilites (bloquante)
+-- registry.local:5000/nebula-comptes:v1.1.0 (seuil : critical, avec correctif disponible)
+NAME             INSTALLED  FIXED IN  TYPE  VULNERABILITY        SEVERITY  EPSS         RISK   
+ip-address       10.2.0     10.3.1    npm   GHSA-mwp4-54f8-5fhr  High      0.7% (49th)  0.5    
+brace-expansion  5.0.7      5.0.9     npm   GHSA-rgw5-rvv9-x895  High      0.6% (49th)  0.5    
+brace-expansion  5.0.7      5.0.8     npm   GHSA-mh99-v99m-4gvg  High      0.6% (49th)  0.5    
+tar              7.5.19     7.5.21    npm   GHSA-r292-9mhp-454m  High      0.5% (42nd)  0.4    
+undici           6.27.0     6.28.1    npm   GHSA-rfgv-xxqx-mfg5  High      0.4% (31st)  0.3    
+ip-address       10.2.0     10.2.2    npm   GHSA-4xrf-jv44-h6hh  Medium    0.5% (39th)  0.3    
+brace-expansion  5.0.7      5.0.10    npm   GHSA-6j4f-fj2g-mc7p  High      0.4% (26th)  0.3    
+brace-expansion  5.0.7      5.0.11    npm   GHSA-qhr7-859c-m2p7  High      0.4% (26th)  0.3    
+ip-address       10.2.0     10.2.1    npm   GHSA-22jq-vg5j-6vgg  Medium    0.4% (35th)  0.3    
+ip-address       10.2.0     10.5.1    npm   GHSA-2vr4-cq9g-pvrc  Medium    0.4% (30th)  0.2    
+undici           6.27.0     6.28.1    npm   GHSA-3wwx-pv8p-q78v  Medium    0.4% (33rd)  0.2    
+ip-address       10.2.0     10.5.1    npm   GHSA-rpw4-54j3-4h4q  Medium    0.4% (30th)  0.2    
+ip-address       10.2.0     10.7.1    npm   GHSA-j6r3-76f7-8jcv  Medium    0.4% (28th)  0.2    
+ip-address       10.2.0     10.7.1    npm   GHSA-h3mg-xc3c-68pw  Medium    0.3% (20th)  0.2    
+brace-expansion  5.0.7      5.0.12    npm   GHSA-q2hr-2g5m-vwhr  Medium    0.3% (20th)  0.2    
+undici           6.27.0     6.28.0    npm   GHSA-v3r7-h72x-cjcm  Medium    0.2% (7th)   < 0.1  
+undici           6.27.0     6.28.0    npm   GHSA-m8rv-5g2x-5cg5  Medium    0.2% (8th)   < 0.1  
+undici           6.27.0     6.28.0    npm   GHSA-8xcm-r25x-g524  Medium    0.2% (6th)   < 0.1  
+undici           6.27.0     6.28.1    npm   GHSA-r53p-7pc4-xj5r  Low       0.2% (13th)  < 0.1
+   aucune vulnerabilite critical corrigeable
+-- registry.local:5000/nebula-publications:v1.1.0 (seuil : critical, avec correctif disponible)
+NAME             INSTALLED  FIXED IN  TYPE  VULNERABILITY        SEVERITY  EPSS         RISK   
+ip-address       10.2.0     10.3.1    npm   GHSA-mwp4-54f8-5fhr  High      0.7% (49th)  0.5    
+brace-expansion  5.0.7      5.0.9     npm   GHSA-rgw5-rvv9-x895  High      0.6% (49th)  0.5    
+brace-expansion  5.0.7      5.0.8     npm   GHSA-mh99-v99m-4gvg  High      0.6% (49th)  0.5    
+tar              7.5.19     7.5.21    npm   GHSA-r292-9mhp-454m  High      0.5% (42nd)  0.4    
+undici           6.27.0     6.28.1    npm   GHSA-rfgv-xxqx-mfg5  High      0.4% (31st)  0.3    
+ip-address       10.2.0     10.2.2    npm   GHSA-4xrf-jv44-h6hh  Medium    0.5% (39th)  0.3    
+brace-expansion  5.0.7      5.0.10    npm   GHSA-6j4f-fj2g-mc7p  High      0.4% (26th)  0.3    
+brace-expansion  5.0.7      5.0.11    npm   GHSA-qhr7-859c-m2p7  High      0.4% (26th)  0.3    
+ip-address       10.2.0     10.2.1    npm   GHSA-22jq-vg5j-6vgg  Medium    0.4% (35th)  0.3    
+ip-address       10.2.0     10.5.1    npm   GHSA-2vr4-cq9g-pvrc  Medium    0.4% (30th)  0.2    
+undici           6.27.0     6.28.1    npm   GHSA-3wwx-pv8p-q78v  Medium    0.4% (33rd)  0.2    
+ip-address       10.2.0     10.5.1    npm   GHSA-rpw4-54j3-4h4q  Medium    0.4% (30th)  0.2    
+ip-address       10.2.0     10.7.1    npm   GHSA-j6r3-76f7-8jcv  Medium    0.4% (28th)  0.2    
+ip-address       10.2.0     10.7.1    npm   GHSA-h3mg-xc3c-68pw  Medium    0.3% (20th)  0.2    
+brace-expansion  5.0.7      5.0.12    npm   GHSA-q2hr-2g5m-vwhr  Medium    0.3% (20th)  0.2    
+undici           6.27.0     6.28.0    npm   GHSA-v3r7-h72x-cjcm  Medium    0.2% (7th)   < 0.1  
+undici           6.27.0     6.28.0    npm   GHSA-m8rv-5g2x-5cg5  Medium    0.2% (8th)   < 0.1  
+undici           6.27.0     6.28.0    npm   GHSA-8xcm-r25x-g524  Medium    0.2% (6th)   < 0.1  
+undici           6.27.0     6.28.1    npm   GHSA-r53p-7pc4-xj5r  Low       0.2% (13th)  < 0.1
+   aucune vulnerabilite critical corrigeable
+-- registry.local:5000/nebula-worker-medias:v1.1.0 (seuil : critical, avec correctif disponible)
+NAME             INSTALLED  FIXED IN  TYPE  VULNERABILITY        SEVERITY  EPSS         RISK   
+ip-address       10.2.0     10.3.1    npm   GHSA-mwp4-54f8-5fhr  High      0.7% (49th)  0.5    
+brace-expansion  5.0.7      5.0.9     npm   GHSA-rgw5-rvv9-x895  High      0.6% (49th)  0.5    
+brace-expansion  5.0.7      5.0.8     npm   GHSA-mh99-v99m-4gvg  High      0.6% (49th)  0.5    
+tar              7.5.19     7.5.21    npm   GHSA-r292-9mhp-454m  High      0.5% (42nd)  0.4    
+undici           6.27.0     6.28.1    npm   GHSA-rfgv-xxqx-mfg5  High      0.4% (31st)  0.3    
+ip-address       10.2.0     10.2.2    npm   GHSA-4xrf-jv44-h6hh  Medium    0.5% (39th)  0.3    
+brace-expansion  5.0.7      5.0.10    npm   GHSA-6j4f-fj2g-mc7p  High      0.4% (26th)  0.3    
+brace-expansion  5.0.7      5.0.11    npm   GHSA-qhr7-859c-m2p7  High      0.4% (26th)  0.3    
+ip-address       10.2.0     10.2.1    npm   GHSA-22jq-vg5j-6vgg  Medium    0.4% (35th)  0.3    
+ip-address       10.2.0     10.5.1    npm   GHSA-2vr4-cq9g-pvrc  Medium    0.4% (30th)  0.2    
+undici           6.27.0     6.28.1    npm   GHSA-3wwx-pv8p-q78v  Medium    0.4% (33rd)  0.2    
+ip-address       10.2.0     10.5.1    npm   GHSA-rpw4-54j3-4h4q  Medium    0.4% (30th)  0.2    
+ip-address       10.2.0     10.7.1    npm   GHSA-j6r3-76f7-8jcv  Medium    0.4% (28th)  0.2    
+ip-address       10.2.0     10.7.1    npm   GHSA-h3mg-xc3c-68pw  Medium    0.3% (20th)  0.2    
+brace-expansion  5.0.7      5.0.12    npm   GHSA-q2hr-2g5m-vwhr  Medium    0.3% (20th)  0.2    
+undici           6.27.0     6.28.0    npm   GHSA-v3r7-h72x-cjcm  Medium    0.2% (7th)   < 0.1  
+undici           6.27.0     6.28.0    npm   GHSA-m8rv-5g2x-5cg5  Medium    0.2% (8th)   < 0.1  
+undici           6.27.0     6.28.0    npm   GHSA-8xcm-r25x-g524  Medium    0.2% (6th)   < 0.1  
+undici           6.27.0     6.28.1    npm   GHSA-r53p-7pc4-xj5r  Low       0.2% (13th)  < 0.1
+   aucune vulnerabilite critical corrigeable
+
+== 4. publication
+registry.local:5000/nebula-comptes:v1.1.0
+registry.local:5000/nebula-comptes:sha-4abb539
+registry.local:5000/nebula-publications:v1.1.0
+registry.local:5000/nebula-publications:sha-4abb539
+registry.local:5000/nebula-worker-medias:v1.1.0
+registry.local:5000/nebula-worker-medias:sha-4abb539
+
+== images publiees
+   nebula-comptes  v1.1.0  sha-4abb539  registry.local:5000/nebula-comptes@sha256:cc4168d5dca22dfced0b956e2a655b8507664c5247b6d5293ed443f3b76e8a2e
+   nebula-publications  v1.1.0  sha-4abb539  registry.local:5000/nebula-publications@sha256:4e5310c1aa54fcc6f5f01d54ec9f8579dfc0f28238c3b2f876a80e168ca79f70
+   nebula-worker-medias  v1.1.0  sha-4abb539  registry.local:5000/nebula-worker-medias@sha256:908e755de2c48d53a5891743b3e3bf3cd2b2b7d33af9773e3cf90e34f07b0589
+
+duree : 174 s
+
+# un tag publie est immuable : relancer la meme version est refuse
+$ ./scripts/build-push.sh v1.1.0
+ERREUR : registry.local:5000/nebula-comptes:v1.1.0 existe deja : un tag publie est immuable (une version par commit)
+
+# analyse bloquante : avec un seuil plus strict, la publication est refusee
+$ SEUIL=high ./scripts/scan.sh registry.local:5000/nebula-comptes:v1.1.0; echo "code de retour : $?"
+-- registry.local:5000/nebula-comptes:v1.1.0 (seuil : high, avec correctif disponible)
+NAME             INSTALLED  FIXED IN  TYPE  VULNERABILITY        SEVERITY  EPSS         RISK   
+ip-address       10.2.0     10.3.1    npm   GHSA-mwp4-54f8-5fhr  High      0.7% (49th)  0.5    
+brace-expansion  5.0.7      5.0.9     npm   GHSA-rgw5-rvv9-x895  High      0.6% (49th)  0.5    
+brace-expansion  5.0.7      5.0.8     npm   GHSA-mh99-v99m-4gvg  High      0.6% (49th)  0.5    
+tar              7.5.19     7.5.21    npm   GHSA-r292-9mhp-454m  High      0.5% (42nd)  0.4    
+ERREUR : registry.local:5000/nebula-comptes:v1.1.0 : vulnerabilite high corrigeable, publication refusee
+code de retour : 1
+
+# tracabilite : du tag au commit
+$ docker image inspect registry.local:5000/nebula-comptes:v1.1.0 --format ...
+org.opencontainers.image.revision=4abb539444f8776b900d7aa5f5770d75e5d499bf
+org.opencontainers.image.version=v1.1.0
+registry.local:5000/nebula-comptes:sha-4abb539
+registry.local:5000/nebula-comptes:v1.1.0
+

@@ -1,0 +1,37 @@
+# Scenario 1 : les trois machines forment un seul cluster
+# releve du 2026-10-05 14:08 UTC
+
+[manager] $ docker node ls
+ID                            HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+a2b49qsy9mqaqr0p39iwzs4a3 *   manager    Ready     Active         Leader           29.8.2
+7q624shqfycjozqarie5ezpsn     worker1    Ready     Active                          29.8.2
+ufs3jk51cw5lou07j3bvu183f     worker2    Ready     Active                          29.8.2
+
+[manager] $ docker info --format ...
+Swarm active, 3 noeuds dont 1 manager, adresse annoncee 10.96.253.211, Docker 29.8.2
+
+# Formation du cluster, etiquettes et test du reseau entre machines (script rejouable)
+[poste] $ ./cluster/20-swarm.sh
+== 1. port d'administration (2377/tcp) joignable depuis les workers
+   worker1 -> 10.96.253.211:2377 OK
+   worker2 -> 10.96.253.211:2377 OK
+== 2. formation du cluster
+== 3. etiquettes de placement
+== 4. reseau applicatif (4789/udp) et decouverte (7946) entre machines
+   manager -> 10.0.3.3 OK
+   manager -> 10.0.3.4 OK
+   manager -> 10.0.3.5 OK
+   worker1 -> 10.0.3.4 OK
+   worker1 -> 10.0.3.3 OK
+   worker1 -> 10.0.3.5 OK
+   worker2 -> 10.0.3.4 OK
+   worker2 -> 10.0.3.3 OK
+   worker2 -> 10.0.3.5 OK
+== 5. cluster
+ID                            HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+a2b49qsy9mqaqr0p39iwzs4a3 *   manager    Ready     Active         Leader           29.8.2
+7q624shqfycjozqarie5ezpsn     worker1    Ready     Active                          29.8.2
+ufs3jk51cw5lou07j3bvu183f     worker2    Ready     Active                          29.8.2
+   manager  10.96.253.211  labels=map[tier:app]
+   worker1  10.96.253.212  labels=map[tier:data]
+   worker2  10.96.253.213  labels=map[tier:app]

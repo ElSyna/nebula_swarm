@@ -1,0 +1,87 @@
+# Scenario 2 : arret puis redemarrage complet du cluster
+# releve du 2026-10-05 14:05 UTC, depuis le poste d'administration
+# Les trois machines sont redemarrees l'une apres l'autre (systemctl reboot), workers d'abord.
+# Aucune commande n'est lancee sur le cluster entre l'ordre de redemarrage et le retour du service.
+
+## avant
+[manager] $ uptime -s ; curl -s localhost/api/fil | head -c 110
+2026-10-05 13:30:15
+{"source":"db","items":[{"id":11,"auteur_id":10,"titre":"smoke","cree_le":"2026-10-05T13:47:46.241Z"},{"id":10
+[manager] $ curl -s localhost/api/comptes/10
+{"id":10,"pseudo":"smoke-1791208065-8891","cree_le":"2026-10-05T13:47:45.902Z"}
+
+## redemarrage
+[poste] $ ./cluster/90-arret.sh reboot
+== reboot de worker1
+== reboot de worker2
+== reboot de manager
+
+# etat releve toutes les 3 s depuis le poste (temps ecoule depuis le premier ordre)
++ 21s  manager injoignable
++117s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=2/3 db=1/1 publications=1/3 worker-medias=2/2 /api/fil=000
++121s  manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=0/1 cache=0/1 comptes=0/3 db=0/1 publications=1/3 worker-medias=0/2 /api/fil=000
++126s  manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=0/1 cache=0/1 comptes=0/3 db=0/1 publications=0/3 worker-medias=0/2 /api/fil=000
++146s  manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=0/1 cache=1/1 comptes=0/3 db=1/1 publications=0/3 worker-medias=0/2 /api/fil=000
++150s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=0/1 cache=1/1 comptes=3/3 db=1/1 publications=0/3 worker-medias=2/2 /api/fil=404
++158s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=3/3 db=1/1 publications=0/3 worker-medias=2/2 /api/fil=404
++166s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=3/3 db=1/1 publications=1/3 worker-medias=2/2 /api/fil=404
++172s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 /api/fil=000
++176s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 /api/fil=200
+
+## apres
+[manager] $ uptime -s ; curl -s localhost/api/fil | head -c 110
+2026-10-05 14:06:29
+{"source":"cache","items":[{"id":11,"auteur_id":10,"titre":"smoke","cree_le":"2026-10-05T13:47:46.241Z"},{"id"
+[manager] $ curl -s localhost/api/comptes/10
+{"id":10,"pseudo":"smoke-1791208065-8891","cree_le":"2026-10-05T13:47:45.902Z"}
+
+[manager] $ make status
+
+== noeuds
+HOSTNAME   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+manager    Ready     Active         Leader           29.8.2
+worker1    Ready     Active                          29.8.2
+worker2    Ready     Active                          29.8.2
+   manager  10.96.253.211  labels=map[tier:app]
+   worker1  10.96.253.212  labels=map[tier:data]
+   worker2  10.96.253.213  labels=map[tier:app]
+
+== services
+NAME                   MODE         REPLICAS   IMAGE                                                     PORTS
+edge_traefik           replicated   2/2        registry.local:5000/mirror/traefik:v3.6.25                *:80->80/tcp
+nebula_bus             replicated   1/1        registry.local:5000/mirror/rabbitmq:4-management-alpine   
+nebula_cache           replicated   1/1        registry.local:5000/mirror/redis:7-alpine                 
+nebula_comptes         replicated   3/3        registry.local:5000/nebula-comptes:v1.0.0                 
+nebula_db              replicated   1/1        registry.local:5000/mirror/postgres:18-alpine             
+nebula_publications    replicated   3/3        registry.local:5000/nebula-publications:v1.0.0            
+nebula_worker-medias   replicated   2/2        registry.local:5000/nebula-worker-medias:v1.0.0           
+
+== instances (service, version, machine)
+edge_traefik.1          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 34 seconds ago
+edge_traefik.2          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 34 seconds ago
+nebula_bus.1            registry.local:5000/mirror/rabbitmq:4-management-alpine  worker1  Running 29 seconds ago
+nebula_cache.1          registry.local:5000/mirror/redis:7-alpine                worker2  Running 37 seconds ago
+nebula_comptes.1        registry.local:5000/nebula-comptes:v1.0.0                manager  Running 34 seconds ago
+nebula_comptes.2        registry.local:5000/nebula-comptes:v1.0.0                worker2  Running 36 seconds ago
+nebula_comptes.3        registry.local:5000/nebula-comptes:v1.0.0                worker2  Running 36 seconds ago
+nebula_db.1             registry.local:5000/mirror/postgres:18-alpine            worker1  Running 38 seconds ago
+nebula_publications.1   registry.local:5000/nebula-publications:v1.0.0           manager  Running 17 seconds ago
+nebula_publications.2   registry.local:5000/nebula-publications:v1.0.0           manager  Running 16 seconds ago
+nebula_publications.3   registry.local:5000/nebula-publications:v1.0.0           worker2  Running 16 seconds ago
+nebula_worker-medias.1  registry.local:5000/nebula-worker-medias:v1.0.0          worker2  Running 35 seconds ago
+nebula_worker-medias.2  registry.local:5000/nebula-worker-medias:v1.0.0          manager  Running 35 seconds ago
+
+[manager] $ make smoke
+== chaine applicative sur http://127.0.0.1
+  sante de comptes                              OK
+  sante de publications                         OK
+  creation d'un compte (id=11)                  OK
+  lecture du compte                             OK
+  publication, auteur verifie (id=12)           OK
+  auteur inconnu refuse (HTTP 400)              OK
+  fil : 1re lecture depuis la base (db)         OK
+  fil : 2e lecture depuis le cache (cache)      OK
+
+[manager] $ docker ps --filter name=nebula-infra      (registry et Portainer, hors Swarm)
+nebula-infra-registry-1  Up About a minute
+nebula-infra-portainer-1  Up About a minute

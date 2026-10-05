@@ -44,7 +44,7 @@ fois : un second appel remettrait la version retirée.
 
 1. poste : `./cluster/90-arret.sh` arrête worker1, worker2, puis le manager.
 2. Proxmox : démarrer les trois machines, le manager en premier.
-3. Attendre deux minutes. Docker démarre avec chaque machine, le Swarm se
+3. Attendre deux à trois minutes. Docker démarre avec chaque machine, le Swarm se
    reforme, le manager relance les services ; les applications réessaient
    jusqu'à ce que la base et le bus répondent.
 4. `make status` : trois nœuds `Ready`, sept services au complet.

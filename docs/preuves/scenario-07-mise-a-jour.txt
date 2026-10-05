@@ -1,0 +1,77 @@
+# Scenario 7 : mise a jour sans interruption perceptible (v1.0.0 -> v1.1.0)
+# releve du 2026-10-05 14:01 UTC, sur le manager, dans ~/nebula
+
+$ make charge D=110 &          (requetes en continu sur /health/comptes)
+$ time make deploy TAG=v1.1.0
+
+== 1. prerequis
+   secrets, etiquettes et images v1.1.0 presents
+
+== 2. edge
+Updating service edge_traefik (id: jq28ocmdrzb87q1gns54pnu4b)
+
+== 3. nebula (v1.1.0)
+Updating service nebula_db (id: q1vbb87l3m0o59hy1wrfg6zx8)
+Updating service nebula_cache (id: xqyw70radl42ls7y0fwfwhej5)
+Updating service nebula_bus (id: cbe75x8xyvbzgp4mltuiw1ba4)
+Updating service nebula_comptes (id: p9v3bm26d9xuvcnr8w95b8f3x)
+Updating service nebula_publications (id: k44n8uxk1qewcjaa71hoecqfd)
+Updating service nebula_worker-medias (id: 7t77t691qog34zpije9ompup9)
+
+== 4. convergence
+   +  3s  en cours : nebula_comptes:updating nebula_publications:updating nebula_worker-medias:updating 
+   + 54s  en cours : nebula_comptes:updating nebula_publications:updating 
+   + 58s  en cours : nebula_comptes:updating 
+   + 65s  tous les services sont a leur nombre d instances
+
+== 5. l'edge route les services
+   /health/comptes : HTTP 200
+   /health/publications : HTTP 200
+
+== instances (service, version, machine)
+edge_traefik.1          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 15 minutes ago
+edge_traefik.2          registry.local:5000/mirror/traefik:v3.6.25               manager  Running 15 minutes ago
+nebula_bus.1            registry.local:5000/mirror/rabbitmq:4-management-alpine  worker1  Running 15 minutes ago
+nebula_cache.1          registry.local:5000/mirror/redis:7-alpine                worker2  Running 15 minutes ago
+nebula_comptes.1        registry.local:5000/nebula-comptes:v1.1.0                manager  Running 29 seconds ago
+nebula_comptes.2        registry.local:5000/nebula-comptes:v1.1.0                worker2  Running 40 seconds ago
+nebula_comptes.3        registry.local:5000/nebula-comptes:v1.1.0                manager  Running about a minute ago
+nebula_db.1             registry.local:5000/mirror/postgres:18-alpine            worker1  Running 11 minutes ago
+nebula_publications.1   registry.local:5000/nebula-publications:v1.1.0           manager  Running about a minute ago
+nebula_publications.2   registry.local:5000/nebula-publications:v1.1.0           worker2  Running 36 seconds ago
+nebula_publications.3   registry.local:5000/nebula-publications:v1.1.0           manager  Running 51 seconds ago
+nebula_worker-medias.1  registry.local:5000/nebula-worker-medias:v1.1.0          manager  Running about a minute ago
+nebula_worker-medias.2  registry.local:5000/nebula-worker-medias:v1.1.0          worker2  Running 40 seconds ago
+
+duree : 75 s
+
+# bilan des requetes emises pendant la mise a jour
+== 110 s de requetes sur http://127.0.0.1/health/comptes
+
+-- par code HTTP et version
+    420 200 v1.0.0
+    817 200 v1.1.0
+-- par conteneur
+     66 334869295c7e
+    346 3fe228f49d60
+    256 80ec2c93fc67
+    215 8d05487931ee
+    196 a9ddd5b799cc
+    158 c71099369929
+
+bilan : 1237 requetes abouties sur 1237, 0 en echec
+
+# meme mesure sur une route qui lit la base et le cache, pendant le retour en v1.0.0
+$ make charge D=110 P=/api/fil &
+$ make deploy TAG=v1.0.0
+== 4. convergence
+   +  2s  en cours : nebula_comptes:updating nebula_publications:updating nebula_worker-medias:updating 
+   + 40s  en cours : nebula_comptes:updating nebula_publications:updating 
+   + 51s  en cours : nebula_publications:updating 
+   + 56s  tous les services sont a leur nombre d instances
+
+duree : 66 s
+
+-- par code HTTP et version
+   1241 200 -
+bilan : 1241 requetes abouties sur 1241, 0 en echec
