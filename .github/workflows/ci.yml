@@ -1,0 +1,58 @@
+# ===========================================================================
+# CI : fabrique les images. Construit, analyse, tague et publie, sans
+# intervention manuelle.
+#
+#   git tag v1.1.0 && git push origin v1.1.0
+#
+# Le deploiement est un autre flux (cd.yml), declenche a la main. Il ne
+# reconstruit jamais : il deploie l'image publiee ici.
+# ===========================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+jobs:
+
+  # A chaque commit : les fichiers sont valides et les images se construisent.
+  verifier:
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntaxe des scripts
+        run: for f in scripts/*.sh cluster/*.sh infra/*.sh config/entrypoint.sh; do bash -n "$f"; done
+      - name: Fichiers de stack
+        run: |
+          docker swarm init >/dev/null
+          REGISTRY=registry.local:5000 TAG=v0.0.0 docker stack config -c swarm/stack.nebula.yml >/dev/null
+          docker stack config -c swarm/stack.edge.yml >/dev/null
+      - name: Construction des images (sans publication)
+        run: for s in comptes publications worker-medias; do docker build -q "services/$s"; done
+
+  # Sur un tag de version : publication dans le registry du cluster. Le
+  # registry est sur un reseau prive, le runner est donc installe sur le
+  # manager (cluster/50-runner.sh).
+  publier:
+    if: github.ref_type == 'tag'
+    runs-on: [self-hosted, nebula]
+    env:
+      REGISTRY: registry.local:5000
+    steps:
+      - uses: actions/checkout@v4
+      - name: Connexion au registry
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          # Identifiants ranges dans un dossier propre a ce flux, efface a la fin.
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/docker-ci" >> "$GITHUB_ENV"
+          export DOCKER_CONFIG=$RUNNER_TEMP/docker-ci
+          printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+      - name: Construire, analyser, taguer, publier
+        run: ./scripts/build-push.sh "$GITHUB_REF_NAME"
+      - name: Effacer les identifiants
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/docker-ci"

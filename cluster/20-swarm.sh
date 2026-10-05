@@ -11,7 +11,7 @@ actif() { [ "$(sur "$1" "docker info --format '{{.Swarm.LocalNodeState}}'")" = a
 echo "== 1. port d'administration (2377/tcp) joignable depuis les workers"
 for w in $WORKERS; do
   actif "$MANAGER" || break
-  sur "$w" "nc -z -w 3 $MANAGER_IP 2377" && echo "   $w -> $MANAGER_IP:2377 OK" || echo "   !! $w ne joint pas $MANAGER_IP:2377"
+  sur "$w" "nc -z -w 3 $MANAGER_IP 2377 2>/dev/null" && echo "   $w -> $MANAGER_IP:2377 OK" || echo "   !! $w ne joint pas $MANAGER_IP:2377"
 done
 
 echo "== 2. formation du cluster"

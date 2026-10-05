@@ -1,0 +1,54 @@
+# ===========================================================================
+# CD : deploie sur le cluster une version deja publiee par la CI.
+#
+# Declenchement manuel uniquement (onglet Actions > CD > Run workflow), avec
+# le tag a deployer. L'environnement "production" permet d'exiger une
+# validation avant execution. Aucune construction ici : c'est l'image
+# publiee par la CI, a l'identique, qui est deployee.
+# ===========================================================================
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version a deployer, deja publiee (exemple : v1.1.0)"
+        required: true
+
+concurrency:
+  # Deux deploiements simultanes sur le meme cluster : etat imprevisible.
+  group: deploiement
+  cancel-in-progress: false
+
+jobs:
+  deployer:
+    runs-on: [self-hosted, nebula]
+    environment: production
+    env:
+      REGISTRY: registry.local:5000
+      TAG: ${{ inputs.tag }}
+    steps:
+      # Les fichiers de stack sont ceux de la version deployee.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Connexion au registry
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/docker-cd" >> "$GITHUB_ENV"
+          export DOCKER_CONFIG=$RUNNER_TEMP/docker-cd
+          printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+      # En cas d'echec d'une tache, Swarm revient seul a la version
+      # precedente (failure_action: rollback) et cette etape echoue.
+      - name: Deployer
+        run: ./scripts/deploy.sh
+      - name: Verifier la chaine applicative
+        run: ./scripts/smoke.sh
+      - name: Etat du cluster
+        if: always()
+        run: ./scripts/status.sh
+      - name: Effacer les identifiants
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/docker-cd"
