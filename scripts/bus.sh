@@ -23,7 +23,7 @@ case "${1:-files}" in
     api 'wget -qO- "$U/queues?columns=name,messages,consumers" | tr "}" "\n" | sed "s/^[\[,]*{//; /^.$/d; /^$/d; s/^/   /"' ;;
   poison)
     api 'wget -qO- --header "content-type: application/json" \
-           --post-data "{\"properties\":{},\"routing_key\":\"publications\",\"payload\":\"message invalide\",\"payload_encoding\":\"string\"}" \
+           --post-data "{\"properties\":{\"delivery_mode\":2},\"routing_key\":\"publications\",\"payload\":\"message invalide\",\"payload_encoding\":\"string\"}" \
            "$U/exchanges/%2F/amq.default/publish"; echo'
     echo "   message invalide publie : il doit apparaitre dans publications.erreurs" ;;
   *) erreur "usage : bus.sh files|poison" ;;
