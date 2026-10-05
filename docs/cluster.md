@@ -82,7 +82,7 @@ quand les machines se rallument.
 Ports utilisés entre les nœuds : 2377/tcp (administration), 7946/tcp et udp
 (découverte), 4789/udp (réseau applicatif).
 
-Preuve : [preuves/01-cluster.txt](preuves/01-cluster.txt).
+Preuve : [preuves/scenario-01-cluster.txt](preuves/scenario-01-cluster.txt).
 
 ### Topologie : un manager, deux workers
 
@@ -158,7 +158,7 @@ Ce qui n'est pas dans le dépôt, et où cela se trouve sur le manager :
 | Sauvegardes de la base | `/srv/nebula/backups/` |
 | Secrets applicatifs | dans le Swarm (`docker secret ls`) |
 
-Preuve : [preuves/02-registry.txt](preuves/02-registry.txt).
+Preuve : [preuves/registry.txt](preuves/registry.txt).
 
 ## 5. Runner de livraison
 
