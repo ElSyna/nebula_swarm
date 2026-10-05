@@ -15,6 +15,21 @@ sur_manager() {
     erreur "a executer sur le manager du Swarm"
 }
 
+# attendre_route <chemin> : attend que l'edge serve ce chemin.
+# L'edge a plusieurs instances, et chacune relit l'etat du cluster a son
+# rythme (5 s) : on exige 8 reponses 200 de suite, pas une seule.
+attendre_route() {
+  local suite=0 code=000
+  for _ in $(seq 1 60); do
+    code=$(curl -s -m 3 -o /dev/null -w '%{http_code}' "$BASE_URL$1" || true)
+    if [ "$code" = 200 ]; then suite=$((suite + 1)); else suite=0; fi
+    [ "$suite" -ge 8 ] && break
+    sleep 0.5
+  done
+  echo "   $1 : HTTP $code"
+  [ "$suite" -ge 8 ]
+}
+
 # job <nom> <options et image de docker service create>
 # Lance une tache ponctuelle Swarm (replicated-job), attend sa fin, affiche
 # ses journaux, la supprime. Code de retour 0 si la tache s'est terminee.

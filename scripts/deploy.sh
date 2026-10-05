@@ -76,14 +76,7 @@ titre "5. l'edge route les services"
 # L'edge relit l'etat du cluster toutes les 5 s et sonde chaque tache avant
 # de lui envoyer du trafic : on attend que les routes repondent.
 for s in comptes publications; do
-  code=000
-  for _ in $(seq 1 30); do
-    code=$(curl -s -m 3 -o /dev/null -w '%{http_code}' "$BASE_URL/health/$s" || true)
-    [ "$code" = 200 ] && break
-    sleep 1
-  done
-  echo "   /health/$s : HTTP $code"
-  [ "$code" = 200 ] || erreur "/health/$s ne repond pas a travers l'edge"
+  attendre_route "/health/$s" || erreur "/health/$s ne repond pas a travers l'edge"
 done
 
 "$RACINE/scripts/status.sh"

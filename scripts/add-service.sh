@@ -19,10 +19,5 @@ sed -e '/^#/d' -e "s|IMAGE|$IMAGE|; s|PORT|$PORT|; s|NOM|$NOM|g" swarm/services/
 echo "== $CIBLE cree"
 "$RACINE/scripts/deploy.sh"
 
-echo
-echo "== test : $BASE_URL/$NOM"
-for _ in $(seq 1 15); do
-  code=$(curl -s -m 3 -o /dev/null -w '%{http_code}' "$BASE_URL/$NOM" || true)
-  [ "$code" = 200 ] && break; sleep 2
-done
-echo "   HTTP $code"
+titre "le nouveau service est route"
+attendre_route "/$NOM" || erreur "/$NOM ne repond pas a travers l'edge"
