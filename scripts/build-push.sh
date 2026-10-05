@@ -16,11 +16,13 @@ VERSION=${1:?usage : build-push.sh <version>   exemple : v1.0.0}
 COMMIT=$(git rev-parse HEAD)
 SHA=sha-$(git rev-parse --short=7 HEAD)
 
-titre "1. controle : $VERSION ne doit pas deja exister dans $REGISTRY"
+titre "1. controle : ni $VERSION ni $SHA ne doivent deja exister dans $REGISTRY"
 for s in $SERVICES_APP; do
-  if docker manifest inspect "$REGISTRY/nebula-$s:$VERSION" >/dev/null 2>&1; then
-    erreur "$REGISTRY/nebula-$s:$VERSION existe deja : un tag publie est immuable, choisissez une autre version"
-  fi
+  for t in "$VERSION" "$SHA"; do
+    if docker manifest inspect "$REGISTRY/nebula-$s:$t" >/dev/null 2>&1; then
+      erreur "$REGISTRY/nebula-$s:$t existe deja : un tag publie est immuable (une version par commit)"
+    fi
+  done
 done
 echo "   libre"
 

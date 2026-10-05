@@ -20,18 +20,20 @@ pub=$(curl -fsS -m 5 -X POST "$B/api/publications" -H "$J" -d '{"auteur_id":'"${
 t "publication, auteur verifie (id=$pub)"   test -n "$pub"
 code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST "$B/api/publications" -H "$J" -d '{"auteur_id":999999,"titre":"x"}')
 t "auteur inconnu refuse (HTTP $code)"      test "$code" = 400
-t "lecture du fil"                          curl -fsS -m 5 "$B/api/fil"
+# La publication vient de vider le cache : la 1re lecture du fil interroge
+# la base, la 2e est servie par le cache (30 s).
+s1=$(curl -fsS -m 5 "$B/api/fil" | champ source)
+s2=$(curl -fsS -m 5 "$B/api/fil" | champ source)
+t "fil : 1re lecture depuis la base ($s1)"   test "$s1" = db
+t "fil : 2e lecture depuis le cache ($s2)"   test "$s2" = cache
 
 echo
-echo "== cache : la 1re lecture vient de la base, la 2e du cache"
-for _ in 1 2; do curl -fsS -m 5 "$B/api/fil" | champ source | sed 's/^/  source : /'; done
-
-echo
-echo "== repartition : 12 appels, par service, version et conteneur"
+echo "== repartition : 12 appels par service (nombre, service, version, conteneur)"
 for s in comptes publications; do
   for _ in $(seq 1 12); do
     curl -fsS -m 5 "$B/health/$s" | sed -n 's/.*"service":"\([^"]*\)","version":"\([^"]*\)","host":"\([^"]*\)".*/\1 \2 \3/p'
-  done | sort | uniq -c
+    echo
+  done | sed '/^$/d' | sort | uniq -c
 done
 
 echo

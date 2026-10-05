@@ -31,8 +31,9 @@ for s in $SERVICES_APP; do
 done
 echo "   secrets, etiquettes et images $TAG presents"
 
+# --with-registry-auth : transmet les identifiants du registry aux noeuds.
 titre "2. edge"
-docker stack deploy --detach=false -c swarm/stack.edge.yml edge
+docker stack deploy --detach=false --with-registry-auth -c swarm/stack.edge.yml edge
 
 titre "3. nebula ($TAG)"
 # Chaque fichier de swarm/services/ ajoute un service a la stack.
@@ -41,7 +42,6 @@ for f in swarm/services/*.yml; do
   case "$(basename "$f")" in _*|'*.yml') continue ;; esac
   fichiers+=(-c "$f")
 done
-# --with-registry-auth : transmet les identifiants du registry aux workers.
 # --prune : retire un service qui n'est plus decrit dans les fichiers.
 docker stack deploy --detach=false --with-registry-auth --prune "${fichiers[@]}" "$STACK"
 
