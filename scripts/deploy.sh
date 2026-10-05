@@ -56,7 +56,7 @@ for _ in $(seq 1 240); do
   instances=$(docker service ls --format '{{.Name}}={{.Replicas}}' | sort | tr '\n' ' ')
   majs=$(docker service inspect $(docker service ls -q) \
     --format '{{if .UpdateStatus}}{{.Spec.Name}}:{{.UpdateStatus.State}} {{end}}' | tr -d '\n')
-  attente=$(tr ' ' '\n' <<< "$instances" | awk -F'[=/]' 'NF==3 && $2 != $3 {print $1}' | tr '\n' ' ')
+  attente=$(tr ' ' '\n' <<< "$instances" | awk -F'[=/]' 'NF==3 && $2 < $3 {print $1}' | tr '\n' ' ')
   encours=$(tr ' ' '\n' <<< "$majs" | grep -E ':(updating|rollback_started)$' | tr '\n' ' ' || true)
   etat="${attente:+en attente : $attente}${encours:+en cours : $encours}"
   if [ "$etat" != "$vu" ]; then printf '   +%3ss  %s\n' "$((SECONDS - debut))" "${etat:-tous les services sont a leur nombre d instances}"; vu=$etat; fi
@@ -70,6 +70,20 @@ done
 for s in $SERVICES_APP; do
   image=$(docker service inspect "${STACK}_$s" --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}')
   case "${image%@*}" in *":$TAG") ;; *) erreur "${STACK}_$s est en ${image%@*} et non en $TAG : mise a jour refusee, retour arriere effectue" ;; esac
+done
+
+titre "5. l'edge route les services"
+# L'edge relit l'etat du cluster toutes les 5 s et sonde chaque tache avant
+# de lui envoyer du trafic : on attend que les routes repondent.
+for s in comptes publications; do
+  code=000
+  for _ in $(seq 1 30); do
+    code=$(curl -s -m 3 -o /dev/null -w '%{http_code}' "$BASE_URL/health/$s" || true)
+    [ "$code" = 200 ] && break
+    sleep 1
+  done
+  echo "   /health/$s : HTTP $code"
+  [ "$code" = 200 ] || erreur "/health/$s ne repond pas a travers l'edge"
 done
 
 "$RACINE/scripts/status.sh"
