@@ -14,34 +14,7 @@ adaptés : image de base paramétrable, dossier des traces du worker.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  client([Client HTTP]) -->|"80/tcp, seul port publié"| edge
-
-  subgraph public["réseau edge_public"]
-    edge["edge<br/>Traefik ×2"]
-  end
-
-  subgraph interne["réseau nebula_internal (interne, sans sortie)"]
-    comptes["comptes ×3"]
-    publications["publications ×3"]
-    worker["worker-medias ×2"]
-    db[("db<br/>PostgreSQL 18")]
-    cache[("cache<br/>Redis 7")]
-    bus{{"bus<br/>RabbitMQ 4"}}
-    traces[("traces")]
-  end
-
-  edge -->|"/api/comptes"| comptes
-  edge -->|"/api/publications, /api/fil"| publications
-  publications -->|"vérifie l'auteur"| comptes
-  comptes --> db
-  publications --> db
-  publications -->|"fil, 30 s"| cache
-  publications -->|"événement"| bus
-  bus --> worker
-  worker --> traces
-```
+![Architecture de Nebula : flux entre services avec leurs ports, et placement sur les trois machines](docs/architecture.svg)
 
 `comptes` et `publications` sont sur les deux réseaux : `edge_public` pour
 recevoir le trafic de l'edge, `nebula_internal` pour joindre la base, le

@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1294 1030" width="1294" height="1030" role="img" aria-label="Architecture de Nebula : flux entre services avec leurs ports, et placement sur les trois machines">
+<defs><marker id="fl-pub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b6e69"/></marker><marker id="fl-int" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4548b0"/></marker><marker id="fl-ext" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1c1d1f"/></marker></defs>
+<rect x="0" y="0" width="1294" height="1030" rx="0" fill="#ffffff" stroke="none" stroke-width="0"/>
+<text x="24" y="36" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1c1d1f" text-anchor="start">Nebula : flux et ports</text>
+<line x1="330" y1="31" x2="364" y2="31" stroke="#0b6e69" stroke-width="2.2"/>
+<text x="372" y="35" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">réseau edge_public (flux public)</text>
+<line x1="600" y1="31" x2="634" y2="31" stroke="#4548b0" stroke-width="2.2"/>
+<text x="642" y="35" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">réseau nebula_internal (interne, sans sortie)</text>
+<rect x="930" y="22" width="67" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="963.5" y="34" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=app</text>
+<text x="1005" y="35" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">placement (étiquette du nœud)</text>
+<rect x="226" y="70" width="1052" height="556" rx="12" fill="none" stroke="#c3c7cd" stroke-width="1.2" stroke-dasharray="6 5"/>
+<text x="240" y="62" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#5c6068" text-anchor="start">Cluster Docker Swarm</text>
+<rect x="24" y="180" width="130" height="100" rx="8" fill="#f6f7f8" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="89" y="222" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="middle">Client HTTP</text>
+<text x="89" y="242" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="middle">navigateur, curl</text>
+<polyline points="154,230 248,230" fill="none" stroke="#1c1d1f" stroke-width="1.8" marker-end="url(#fl-ext)"/>
+<text x="190" y="220" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="600" fill="#1c1d1f" text-anchor="middle">80/tcp</text>
+<text x="190" y="248" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#5c6068" text-anchor="middle">HTTP</text>
+<rect x="250" y="100" width="180" height="250" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="264" y="126" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">edge</text>
+<text x="264" y="146" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">Traefik 3.6 ×2</text>
+<text x="264" y="172" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:80</text>
+<text x="264" y="196" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">seul port publié</text>
+<text x="264" y="212" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">du cluster : il répond</text>
+<text x="264" y="228" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">sur les 3 nœuds</text>
+<text x="264" y="244" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">(routing mesh)</text>
+<text x="264" y="270" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">route selon les labels</text>
+<text x="264" y="286" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">des services</text>
+<rect x="262" y="322" width="61" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="292.5" y="334" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">manager</text>
+<rect x="329" y="322" width="54" height="17" rx="8.5" fill="none" stroke="#0b6e69" stroke-width="1"/>
+<text x="356.0" y="334" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#0b6e69" text-anchor="middle">public</text>
+<text x="340" y="372" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="middle">/metrics : indicateurs,</text>
+<text x="340" y="388" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="middle">mot de passe exigé</text>
+<rect x="620" y="100" width="230" height="100" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="634" y="125" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">comptes ×3</text>
+<text x="634" y="145" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:3000</text>
+<rect x="632" y="174" width="67" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="665.5" y="186" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=app</text>
+<rect x="705" y="174" width="54" height="17" rx="8.5" fill="none" stroke="#0b6e69" stroke-width="1"/>
+<text x="732.0" y="186" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#0b6e69" text-anchor="middle">public</text>
+<rect x="764" y="174" width="61" height="17" rx="8.5" fill="none" stroke="#4548b0" stroke-width="1"/>
+<text x="794.5" y="186" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#4548b0" text-anchor="middle">interne</text>
+<rect x="620" y="250" width="230" height="100" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="634" y="275" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">publications ×3</text>
+<text x="634" y="295" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:3000</text>
+<rect x="632" y="324" width="67" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="665.5" y="336" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=app</text>
+<rect x="705" y="324" width="54" height="17" rx="8.5" fill="none" stroke="#0b6e69" stroke-width="1"/>
+<text x="732.0" y="336" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#0b6e69" text-anchor="middle">public</text>
+<rect x="764" y="324" width="61" height="17" rx="8.5" fill="none" stroke="#4548b0" stroke-width="1"/>
+<text x="794.5" y="336" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#4548b0" text-anchor="middle">interne</text>
+<rect x="620" y="420" width="230" height="100" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="634" y="445" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">worker-medias ×2</text>
+<text x="634" y="465" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:3000</text>
+<text x="634" y="482" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">sonde de santé seule, non routé</text>
+<rect x="632" y="494" width="67" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="665.5" y="506" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=app</text>
+<rect x="705" y="494" width="61" height="17" rx="8.5" fill="none" stroke="#4548b0" stroke-width="1"/>
+<text x="735.5" y="506" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#4548b0" text-anchor="middle">interne</text>
+<rect x="640" y="566" width="190" height="38" rx="19" fill="#f6f7f8" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="735.0" y="590" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="middle">volume worker_traces</text>
+<rect x="1030" y="100" width="232" height="100" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="1044" y="125" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">db · PostgreSQL 18</text>
+<text x="1044" y="145" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:5432</text>
+<text x="1044" y="162" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">volume db_data</text>
+<rect x="1042" y="174" width="74" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="1079.0" y="186" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=data</text>
+<rect x="1122" y="174" width="61" height="17" rx="8.5" fill="none" stroke="#4548b0" stroke-width="1"/>
+<text x="1152.5" y="186" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#4548b0" text-anchor="middle">interne</text>
+<rect x="1030" y="250" width="232" height="100" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="1044" y="275" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">cache · Redis 7</text>
+<text x="1044" y="295" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:6379</text>
+<text x="1044" y="312" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">aucune persistance</text>
+<rect x="1042" y="324" width="67" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="1075.5" y="336" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=app</text>
+<rect x="1115" y="324" width="61" height="17" rx="8.5" fill="none" stroke="#4548b0" stroke-width="1"/>
+<text x="1145.5" y="336" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#4548b0" text-anchor="middle">interne</text>
+<rect x="1030" y="420" width="232" height="100" rx="8" fill="#ffffff" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="1044" y="445" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="600" fill="#1c1d1f" text-anchor="start">bus · RabbitMQ 4</text>
+<text x="1044" y="465" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">:5672 AMQP · :15672 admin</text>
+<text x="1044" y="482" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">volume bus_data</text>
+<rect x="1042" y="494" width="74" height="17" rx="8.5" fill="#f6f7f8" stroke="#5c6068" stroke-width="1"/>
+<text x="1079.0" y="506" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#5c6068" text-anchor="middle">tier=data</text>
+<rect x="1122" y="494" width="61" height="17" rx="8.5" fill="none" stroke="#4548b0" stroke-width="1"/>
+<text x="1152.5" y="506" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="500" fill="#4548b0" text-anchor="middle">interne</text>
+<polyline points="430,150 618,150" fill="none" stroke="#0b6e69" stroke-width="1.6" marker-end="url(#fl-pub)"/>
+<text x="524" y="141" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">/api/comptes</text>
+<text x="524" y="166" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">/health/comptes</text>
+<polyline points="430,300 618,300" fill="none" stroke="#0b6e69" stroke-width="1.6" marker-end="url(#fl-pub)"/>
+<text x="524" y="277" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">/api/publications</text>
+<text x="524" y="291" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">/api/fil</text>
+<text x="524" y="316" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">/health/publications</text>
+<polyline points="735,250 735,202" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="745" y="222" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">vérifie l'auteur</text>
+<text x="745" y="237" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="start">:3000</text>
+<polyline points="850,150 1028,150" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="939" y="141" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="middle">lecture, écriture</text>
+<text x="939" y="166" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">:5432</text>
+<polyline points="850,270 1028,184" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="918" y="222" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="end">:5432</text>
+<polyline points="850,310 1028,310" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="939" y="301" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="middle">fil en cache 30 s</text>
+<text x="939" y="326" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">:6379</text>
+<polyline points="850,338 1028,436" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="922" y="399" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="end">événement</text>
+<text x="922" y="414" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="end">:5672</text>
+<polyline points="1030,485 852,485" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="940" y="476" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="middle">consomme</text>
+<text x="940" y="501" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#1c1d1f" text-anchor="middle">:5672</text>
+<polyline points="735,520 735,564" fill="none" stroke="#4548b0" stroke-width="1.6" marker-end="url(#fl-int)"/>
+<text x="745" y="547" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">une trace par publication</text>
+<text x="24" y="672" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1c1d1f" text-anchor="start">Machines et ports ouverts</text>
+<rect x="24" y="694" width="401" height="222" rx="8" fill="#f6f7f8" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="40" y="722" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#1c1d1f" text-anchor="start">manager</text>
+<text x="409" y="722" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="400" fill="#1c1d1f" text-anchor="end">10.96.253.211</text>
+<text x="40" y="742" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">manager Swarm (Leader) · tier=app · 2 vCPU, 4 Go</text>
+<text x="40" y="770" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">SWARM</text>
+<text x="130" y="770" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">edge ×2</text>
+<text x="130" y="788" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">comptes, publications, worker-medias, cache*</text>
+<text x="40" y="814" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">HORS SWARM</text>
+<text x="130" y="814" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">registry :5000 (TLS, mot de passe)</text>
+<text x="130" y="832" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">Portainer 127.0.0.1:9000 (tunnel SSH)</text>
+<text x="130" y="850" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">runner de livraison, sauvegardes de la base</text>
+<line x1="40" y1="880" x2="409" y2="880" stroke="#c3c7cd" stroke-width="1"/>
+<text x="40" y="901" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">Ports ouverts</text>
+<text x="130" y="901" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">22 ssh · 80 edge · 5000 registry</text>
+<rect x="446" y="694" width="401" height="222" rx="8" fill="#f6f7f8" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="462" y="722" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#1c1d1f" text-anchor="start">worker1</text>
+<text x="831" y="722" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="400" fill="#1c1d1f" text-anchor="end">10.96.253.212</text>
+<text x="462" y="742" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">worker · tier=data · 2 vCPU, 4 Go</text>
+<text x="462" y="770" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">SWARM</text>
+<text x="552" y="770" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">db, avec le volume db_data</text>
+<text x="552" y="788" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">bus, avec le volume bus_data</text>
+<line x1="462" y1="880" x2="831" y2="880" stroke="#c3c7cd" stroke-width="1"/>
+<text x="462" y="901" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">Ports ouverts</text>
+<text x="552" y="901" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">22 ssh · 80 edge</text>
+<rect x="868" y="694" width="401" height="222" rx="8" fill="#f6f7f8" stroke="#c3c7cd" stroke-width="1.2"/>
+<text x="884" y="722" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#1c1d1f" text-anchor="start">worker2</text>
+<text x="1253" y="722" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12.5" font-weight="400" fill="#1c1d1f" text-anchor="end">10.96.253.213</text>
+<text x="884" y="742" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5c6068" text-anchor="start">worker · tier=app · 2 vCPU, 2 Go</text>
+<text x="884" y="770" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">SWARM</text>
+<text x="974" y="770" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">comptes, publications, worker-medias, cache*</text>
+<line x1="884" y1="880" x2="1253" y2="880" stroke="#c3c7cd" stroke-width="1"/>
+<text x="884" y="901" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">Ports ouverts</text>
+<text x="974" y="901" font-family="ui-monospace, SF Mono, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">22 ssh · 80 edge</text>
+<text x="24" y="946" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">Entre les nœuds</text>
+<text x="130" y="946" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">2377/tcp administration · 7946/tcp+udp découverte · 4789/udp réseau overlay</text>
+<text x="24" y="968" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">Images</text>
+<text x="130" y="968" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">les trois nœuds tirent toutes leurs images sur registry.local:5000 (manager)</text>
+<text x="24" y="990" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#5c6068" text-anchor="start">Administration</text>
+<text x="130" y="990" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#1c1d1f" text-anchor="start">SSH par le routeur du réseau (10.210.0.34) ; aucune base, aucun bus, aucun cache joignable hors du cluster</text>
+<text x="24" y="1012" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#5c6068" text-anchor="start">* le cache a une seule instance, sur l'un des deux nœuds tier=app</text>
+</svg>
