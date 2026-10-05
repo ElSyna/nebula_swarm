@@ -11,7 +11,9 @@ services:
 
   traefik:
     # Image tierce servie par le registry prive (voir infra/images.txt).
-    image: ${REGISTRY:-registry.local:5000}/mirror/traefik:v3.3
+    # Traefik >= 3.6.1 est requis avec Docker 29 : les versions anterieures
+    # parlent une version de l'API que le daemon refuse.
+    image: ${REGISTRY:-registry.local:5000}/mirror/traefik:v3.6.25
     command:
       # Provider Swarm : Traefik lit les labels des services dans l'API du cluster.
       - --providers.swarm.endpoint=unix:///var/run/docker.sock

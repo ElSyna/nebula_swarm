@@ -4,7 +4,7 @@
 # Docker Hub limite les tirages par adresse IP (100 par heure) et celle du
 # reseau est partagee : les images officielles sont prises sur le miroir
 # public d'Amazon (public.ecr.aws/docker/library), meme contenu.
-public.ecr.aws/docker/library/traefik:v3.3                   traefik:v3.3
+public.ecr.aws/docker/library/traefik:v3.6.25                   traefik:v3.6.25
 public.ecr.aws/docker/library/postgres:18-alpine             postgres:18-alpine
 public.ecr.aws/docker/library/redis:7-alpine                 redis:7-alpine
 public.ecr.aws/docker/library/rabbitmq:4-management-alpine   rabbitmq:4-management-alpine
