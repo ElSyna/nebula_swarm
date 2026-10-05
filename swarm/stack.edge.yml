@@ -1,0 +1,105 @@
+# ===========================================================================
+# EDGE : point d'entree HTTP, seul service du cluster a publier un port.
+#
+#   docker stack deploy -c swarm/stack.edge.yml edge      (ou : make deploy)
+#
+# Chaque service declare son routage dans SES labels : ajouter un service ne
+# demande aucune modification de ce fichier.
+# ===========================================================================
+
+services:
+
+  traefik:
+    # Image tierce servie par le registry prive (voir infra/images.txt).
+    image: ${REGISTRY:-registry.local:5000}/mirror/traefik:v3.3
+    command:
+      # Provider Swarm : Traefik lit les labels des services dans l'API du cluster.
+      - --providers.swarm.endpoint=unix:///var/run/docker.sock
+      # Rien n'est route tant qu'un service ne porte pas traefik.enable=true.
+      - --providers.swarm.exposedByDefault=false
+      # Reseau emprunte pour joindre les services (ils en ont plusieurs).
+      - --providers.swarm.network=edge_public
+      # Delai maximal avant qu'une tache ajoutee ou retiree soit prise en compte.
+      - --providers.swarm.refreshSeconds=5
+      - --entryPoints.web.address=:80
+      # A l'arret, Traefik accepte encore 5 s de requetes : le temps que le
+      # routing mesh cesse de lui en envoyer (mise a jour de l'edge lui-meme).
+      - --entryPoints.web.transport.lifeCycle.requestAcceptGraceTimeout=5s
+      # Une tache disparue ne doit pas bloquer une requete 30 s (defaut).
+      - --serversTransport.forwardingTimeouts.dialTimeout=2s
+      # /ping sur le port 8080 du conteneur (non publie) : sert a la sonde.
+      - --ping=true
+      - --accesslog=true
+      # Indicateurs (requetes, codes, durees par service). manualRouting :
+      # ils ne sont servis que par le routeur "metrics" ci-dessous.
+      - --metrics.prometheus=true
+      - --metrics.prometheus.manualRouting=true
+    ports:
+      # Le seul port publie du cluster. mode ingress : il repond sur les trois
+      # noeuds et la charge est repartie entre les replicas de l'edge.
+      - target: 80
+        published: 80
+        mode: ingress
+    volumes:
+      # Lecture seule : Traefik ne fait que lire l'etat du cluster.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    secrets:
+      - admin_users
+    networks: [public]
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    deploy:
+      replicas: 2
+      placement:
+        # L'API du cluster n'est servie que par un manager.
+        constraints: [node.role == manager]
+      resources:
+        limits: { cpus: "0.50", memory: 128M }
+        reservations: { memory: 48M }
+      restart_policy: { condition: any, delay: 5s }
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+        failure_action: rollback
+      labels:
+        - traefik.enable=true
+        # Port factice : le provider Swarm exige un port par service route,
+        # y compris quand les routeurs pointent vers un service interne.
+        - traefik.http.services.edge-interne.loadbalancer.server.port=8080
+
+        # --- middlewares partages, reutilisables par tous les services -------
+        # /api/comptes/1 -> /comptes/1
+        - traefik.http.middlewares.api-strip.stripprefix.prefixes=/api
+        # /health/<service> -> /health
+        - traefik.http.middlewares.to-health.replacepath.path=/health
+        # Si la tache choisie ne repond pas (elle vient de s'arreter), la
+        # requete est rejouee sur une autre tache.
+        - traefik.http.middlewares.retry.retry.attempts=3
+        - traefik.http.middlewares.retry.retry.initialinterval=100ms
+        # Authentification des routes d'administration : fichier htpasswd
+        # fourni par un secret Swarm.
+        - traefik.http.middlewares.admin-auth.basicauth.usersfile=/run/secrets/admin_users
+
+        # --- indicateurs, proteges par mot de passe --------------------------
+        - traefik.http.routers.metrics.rule=Path(`/metrics`)
+        - traefik.http.routers.metrics.entrypoints=web
+        - traefik.http.routers.metrics.service=prometheus@internal
+        - traefik.http.routers.metrics.middlewares=admin-auth
+
+networks:
+  # Reseau du flux public : l'edge et les services qu'il route, rien d'autre.
+  # Nom fixe pour que les autres stacks s'y rattachent (external: true).
+  public:
+    name: edge_public
+    driver: overlay
+
+secrets:
+  admin_users:
+    external: true
+    name: edge_admin_users

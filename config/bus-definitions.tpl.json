@@ -1,0 +1,40 @@
+{
+  "users": [
+    {
+      "name": "nebula",
+      "password_hash": "@PASSWORD_HASH@",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator"]
+    }
+  ],
+  "vhosts": [{ "name": "/" }],
+  "permissions": [
+    { "user": "nebula", "vhost": "/", "configure": ".*", "write": ".*", "read": ".*" }
+  ],
+  "exchanges": [
+    {
+      "name": "nebula.erreurs", "vhost": "/", "type": "fanout",
+      "durable": true, "auto_delete": false, "internal": false, "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "publications.erreurs", "vhost": "/",
+      "durable": true, "auto_delete": false, "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "nebula.erreurs", "vhost": "/",
+      "destination": "publications.erreurs", "destination_type": "queue",
+      "routing_key": "", "arguments": {}
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/", "name": "erreurs", "pattern": "^publications$",
+      "apply-to": "queues", "priority": 0,
+      "definition": { "dead-letter-exchange": "nebula.erreurs" }
+    }
+  ]
+}

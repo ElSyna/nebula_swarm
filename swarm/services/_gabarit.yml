@@ -1,0 +1,41 @@
+# ===========================================================================
+# Gabarit d'un service supplementaire.
+#
+#   make service NOM=whoami IMAGE=traefik/whoami:v1.11 PORT=80
+#
+# copie ce fichier en swarm/services/<nom>.yml, remplace NOM, IMAGE et PORT,
+# puis redeploie. Les fichiers de ce dossier sont fusionnes avec
+# swarm/stack.nebula.yml : reseaux et secrets y sont deja declares, et les
+# services existants, inchanges, ne sont pas redemarres. L'edge n'est pas
+# modifie : le routage est porte par les labels ci-dessous.
+#
+# Le service repond sur  http://<noeud>/NOM
+# ===========================================================================
+
+services:
+
+  NOM:
+    image: IMAGE
+    # edge_public pour etre route. Ajouter "internal" si le service doit
+    # joindre db, bus, cache ou un autre service, et la liste "secrets"
+    # correspondante (db_password, bus_password, cache_password).
+    networks: [edge_public]
+    deploy:
+      replicas: 2
+      placement:
+        constraints: [node.labels.tier == app]
+      resources:
+        limits: { cpus: "0.25", memory: 64M }
+      restart_policy: { condition: any, delay: 5s }
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+      labels:
+        - traefik.enable=true
+        - traefik.http.services.NOM.loadbalancer.server.port=PORT
+        - traefik.http.routers.NOM.rule=PathPrefix(`/NOM`)
+        - traefik.http.routers.NOM.entrypoints=web
+        # /NOM/x -> /x
+        - traefik.http.middlewares.NOM-strip.stripprefix.prefixes=/NOM
+        - traefik.http.routers.NOM.middlewares=NOM-strip,retry

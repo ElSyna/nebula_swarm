@@ -1,0 +1,284 @@
+# ===========================================================================
+# NEBULA : les six services derriere l'edge (swarm/stack.edge.yml).
+#
+#   make deploy TAG=v1.0.0
+#   soit : REGISTRY=registry.local:5000 TAG=v1.0.0 docker stack deploy \
+#            -c swarm/stack.nebula.yml --with-registry-auth nebula
+#
+# Les images tierces (postgres, redis, rabbitmq) viennent du registry prive,
+# dossier mirror/ : le cluster ne depend pas d'un registry public.
+# Placement : la base et le bus sur le noeud etiquete tier=data, les services
+# sans etat et le cache sur les noeuds etiquetes tier=app.
+# Reseaux   : edge_public (flux public) et internal (echanges internes).
+#             db, bus, cache et worker-medias ne sont que sur internal.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Blocs communs aux services applicatifs. Un nouveau service les reprend avec
+# "<<: *app" et "<<: *app-deploy" (voir swarm/services/_gabarit.yml).
+# ---------------------------------------------------------------------------
+x-app: &app
+  # Les images n'acceptent leurs mots de passe que dans des URL (AMQP_URL,
+  # REDIS_URL). Ce script les construit a partir des secrets, puis lance la
+  # commande. Il retarde aussi l'arret de DRAIN_SECONDS (voir le script).
+  entrypoint: ["/bin/sh", "/nebula/entrypoint.sh"]
+  command: ["node", "src/index.js"]
+  configs:
+    - source: entrypoint
+      target: /nebula/entrypoint.sh
+  # Doit couvrir DRAIN_SECONDS + l'arret propre de l'application (8 s max).
+  stop_grace_period: 30s
+  # La commande de sonde vient de l'image (GET /health). On resserre les
+  # delais : une version qui ne repond pas est declaree en echec en ~35 s.
+  healthcheck:
+    interval: 5s
+    timeout: 3s
+    retries: 3
+    start_period: 20s
+
+x-app-deploy: &app-deploy
+  placement:
+    constraints: [node.labels.tier == app]
+  resources:
+    # Sans limite, le noyau tue des conteneurs au hasard quand la machine sature.
+    limits: { cpus: "0.50", memory: 128M }
+    reservations: { memory: 48M }
+  restart_policy: { condition: any, delay: 5s }
+  update_config:
+    parallelism: 1          # une tache a la fois
+    delay: 5s
+    order: start-first      # la nouvelle tache est saine avant l'arret de l'ancienne
+    monitor: 15s            # duree d'observation apres chaque tache
+    failure_action: rollback
+  rollback_config:
+    parallelism: 1
+    order: start-first
+
+services:
+
+  # -------------------------------------------------------------------------
+  comptes:
+    <<: *app
+    image: ${REGISTRY:-registry.local:5000}/nebula-comptes:${TAG:?TAG requis, exemple v1.0.0}
+    environment:
+      PGHOST: db
+      POSTGRES_DB: nebula
+      POSTGRES_USER: nebula
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      DRAIN_SECONDS: "10"
+    secrets: [db_password]
+    networks: [edge_public, internal]
+    deploy:
+      <<: *app-deploy
+      replicas: 3
+      labels:
+        - traefik.enable=true
+        # Obligatoire en Swarm : Traefik ne devine pas le port d'un service.
+        - traefik.http.services.comptes.loadbalancer.server.port=3000
+        # Sonde active : une tache qui ne repond plus sort de la rotation.
+        - traefik.http.services.comptes.loadbalancer.healthcheck.path=/health
+        - traefik.http.services.comptes.loadbalancer.healthcheck.interval=3s
+        - traefik.http.services.comptes.loadbalancer.healthcheck.timeout=2s
+        # /api/comptes[/id] -> /comptes[/id]   et   /api/health -> /health
+        - traefik.http.routers.comptes.rule=PathPrefix(`/api/comptes`) || Path(`/api/health`)
+        - traefik.http.routers.comptes.entrypoints=web
+        - traefik.http.routers.comptes.middlewares=api-strip,retry
+        # /health/comptes -> /health
+        - traefik.http.routers.comptes-health.rule=Path(`/health/comptes`)
+        - traefik.http.routers.comptes-health.entrypoints=web
+        - traefik.http.routers.comptes-health.middlewares=to-health,retry
+
+  # -------------------------------------------------------------------------
+  publications:
+    <<: *app
+    image: ${REGISTRY:-registry.local:5000}/nebula-publications:${TAG:?TAG requis, exemple v1.0.0}
+    environment:
+      PGHOST: db
+      POSTGRES_DB: nebula
+      POSTGRES_USER: nebula
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      COMPTES_URL: http://comptes:3000
+      DRAIN_SECONDS: "10"
+    # bus_password et cache_password sont lus par entrypoint.sh.
+    secrets: [db_password, bus_password, cache_password]
+    networks: [edge_public, internal]
+    deploy:
+      <<: *app-deploy
+      replicas: 3
+      labels:
+        - traefik.enable=true
+        - traefik.http.services.publications.loadbalancer.server.port=3000
+        - traefik.http.services.publications.loadbalancer.healthcheck.path=/health
+        - traefik.http.services.publications.loadbalancer.healthcheck.interval=3s
+        - traefik.http.services.publications.loadbalancer.healthcheck.timeout=2s
+        # /api/publications -> /publications   et   /api/fil -> /fil
+        - traefik.http.routers.publications.rule=PathPrefix(`/api/publications`) || Path(`/api/fil`)
+        - traefik.http.routers.publications.entrypoints=web
+        - traefik.http.routers.publications.middlewares=api-strip,retry
+        - traefik.http.routers.publications-health.rule=Path(`/health/publications`)
+        - traefik.http.routers.publications-health.entrypoints=web
+        - traefik.http.routers.publications-health.middlewares=to-health,retry
+
+  # -------------------------------------------------------------------------
+  worker-medias:
+    <<: *app
+    image: ${REGISTRY:-registry.local:5000}/nebula-worker-medias:${TAG:?TAG requis, exemple v1.0.0}
+    environment:
+      SORTIE_DIR: /data
+    secrets: [bus_password]
+    volumes:
+      # Une trace par publication. Volume local : chaque noeud a le sien.
+      - worker_traces:/data
+    # Aucun label traefik, aucun reseau public : le worker n'est pas route.
+    networks: [internal]
+    deploy:
+      <<: *app-deploy
+      replicas: 2
+
+  # -------------------------------------------------------------------------
+  db:
+    image: ${REGISTRY:-registry.local:5000}/mirror/postgres:18-alpine
+    environment:
+      POSTGRES_DB: nebula
+      POSTGRES_USER: nebula
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    configs:
+      # Execute une seule fois, a l'initialisation d'un volume vide.
+      - source: db_init
+        target: /docker-entrypoint-initdb.d/init.sql
+    volumes:
+      # PostgreSQL 18 : le volume se monte sur la racine, pas sur /data.
+      - db_data:/var/lib/postgresql
+    networks: [internal]
+    # Laisse a PostgreSQL le temps d'un arret propre (checkpoint).
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nebula -d nebula"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        # Le volume est local au noeud : la base doit toujours y revenir.
+        constraints: [node.labels.tier == data]
+      resources:
+        limits: { cpus: "1.00", memory: 512M }
+        reservations: { memory: 256M }
+      restart_policy: { condition: any, delay: 5s }
+      update_config:
+        # Un seul processus a la fois sur le volume.
+        order: stop-first
+        failure_action: rollback
+
+  # -------------------------------------------------------------------------
+  cache:
+    image: ${REGISTRY:-registry.local:5000}/mirror/redis:7-alpine
+    # Le mot de passe vient du secret. Aucune persistance : le cache se
+    # reconstruit seul (TTL de 30 s cote application).
+    command:
+      - sh
+      - -c
+      - exec docker-entrypoint.sh redis-server --save "" --appendonly no
+        --maxmemory 64mb --maxmemory-policy allkeys-lru
+        --requirepass "$$(cat /run/secrets/cache_password)"
+    secrets: [cache_password]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$(cat /run/secrets/cache_password)\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.tier == app]
+      resources:
+        limits: { cpus: "0.25", memory: 96M }
+        reservations: { memory: 32M }
+      restart_policy: { condition: any, delay: 5s }
+
+  # -------------------------------------------------------------------------
+  bus:
+    image: ${REGISTRY:-registry.local:5000}/mirror/rabbitmq:4-management-alpine
+    # RabbitMQ range ses donnees sous le nom du noeud (rabbit@<hostname>).
+    # Sans nom fixe, chaque nouvelle tache repartirait d'un broker vide.
+    hostname: bus
+    configs:
+      - source: bus_conf
+        target: /etc/rabbitmq/conf.d/20-nebula.conf
+    secrets:
+      # Utilisateur (empreinte du mot de passe), file des messages en erreur
+      # et politique de renvoi : importes au demarrage.
+      - source: bus_definitions
+        target: /etc/rabbitmq/definitions.json
+    volumes:
+      - bus_data:/var/lib/rabbitmq
+    networks: [internal]
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.tier == data]
+      resources:
+        limits: { cpus: "1.00", memory: 512M }
+        reservations: { memory: 192M }
+      restart_policy: { condition: any, delay: 5s }
+      update_config:
+        order: stop-first
+        failure_action: rollback
+
+networks:
+  # Cree par la stack edge.
+  edge_public:
+    external: true
+  # internal: true : aucune sortie vers l'exterieur, aucun port publiable.
+  # attachable : autorise un conteneur de diagnostic ponctuel
+  # (docker run --rm --network nebula_internal ...).
+  internal:
+    name: nebula_internal
+    driver: overlay
+    internal: true
+    attachable: true
+
+volumes:
+  db_data:
+  bus_data:
+  worker_traces:
+
+# Une config Swarm est immuable : pour en changer le contenu, changer le
+# suffixe de version du nom, puis redeployer.
+configs:
+  entrypoint:
+    name: nebula_entrypoint_v1
+    file: ../config/entrypoint.sh
+  db_init:
+    name: nebula_db_init_v1
+    file: ../db/init.sql
+  bus_conf:
+    name: nebula_bus_conf_v1
+    file: ../config/rabbitmq.conf
+
+# Crees hors depot par scripts/secrets.sh (make secrets).
+secrets:
+  db_password:
+    external: true
+    name: nebula_db_password
+  cache_password:
+    external: true
+    name: nebula_cache_password
+  bus_password:
+    external: true
+    name: nebula_bus_password
+  bus_definitions:
+    external: true
+    name: nebula_bus_definitions
