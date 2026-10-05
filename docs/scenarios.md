@@ -11,7 +11,7 @@ Sauf mention contraire, les commandes se lancent sur le manager, dans
 |---|---|---|---|
 | 1 | Un seul cluster | `docker node ls` | 3 nœuds `Ready` / `Active`, `manager` est `Leader` |
 | 2 | Arrêt et redémarrage complet | poste : `./cluster/90-arret.sh` | service revenu seul en 116 s et 176 s (deux essais), données intactes |
-| 3 | Déploiement depuis zéro | `make destroy`, `make deploy TAG=v1.0.0` | 21 s + 31 s |
+| 3 | Déploiement depuis zéro | `make destroy`, `make deploy TAG=v1.0.0` | 20 s + 35 s |
 | 4 | Exposition | `make exposition` | port 80 seul publié ; base, bus, cache fermés |
 | 5 | Placement | `make status` | db et bus sur worker1, sans état sur manager et worker2 |
 | 6 | Montée en charge | `make scale S=comptes N=6` | 6 instances sur 2 nœuds, toutes servent du trafic |
