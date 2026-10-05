@@ -7,10 +7,10 @@ cd "$(dirname "$0")"; . ./nodes.env
 
 ssh "$MANAGER" "REGISTRY_HOST=$REGISTRY_HOST REGISTRY_IP=$MANAGER_IP ~/nebula/infra/up.sh"
 
-echo "== 6. images tierces copiees dans le registry"
+echo "== 7. images tierces copiees dans le registry"
 ssh "$MANAGER" "REGISTRY=$REGISTRY_HOST:5000 ~/nebula/infra/mirror.sh"
 
-echo "== 7. les workers font confiance au registry"
+echo "== 8. les workers font confiance au registry"
 CA=$(ssh "$MANAGER" 'cat /srv/nebula/registry/certs/ca.crt')
 for w in $WORKERS; do
   scp -q ../infra/trust.sh "$w:/tmp/nebula-trust.sh"

@@ -61,7 +61,24 @@ echo "== 4. demarrage"
 INFRA_HOME=$ETAT docker compose -f compose.yaml up -d --quiet-pull
 docker compose -f compose.yaml ps --format 'table {{.Service}}\t{{.Status}}\t{{.Ports}}'
 
-echo "== 5. le manager fait confiance au registry et s'y connecte"
+echo "== 5. Portainer : environnement local (le Swarm, par le socket du manager)"
+PORTAINER=http://127.0.0.1:9000/api
+jeton=""
+for _ in $(seq 1 20); do
+  jeton=$(curl -s -m 5 -X POST "$PORTAINER/auth" -H 'content-type: application/json' \
+    -d '{"username":"admin","password":"'"$(cat "$ETAT/portainer/admin_password")"'"}' |
+    sed -n 's/.*"jwt":"\([^"]*\)".*/\1/p')
+  [ -n "$jeton" ] && break; sleep 2
+done
+if [ "$(curl -s -m 5 -H "Authorization: Bearer $jeton" "$PORTAINER/endpoints")" = "[]" ]; then
+  curl -s -m 10 -o /dev/null -X POST "$PORTAINER/endpoints" -H "Authorization: Bearer $jeton" \
+    -F Name=nebula -F EndpointCreationType=1
+  echo "   cree"
+else
+  echo "   deja present"
+fi
+
+echo "== 6. le manager fait confiance au registry et s'y connecte"
 "$(pwd)/trust.sh" "$IP" < "$C/ca.crt"
 . "$IDENTIFIANTS"
 for _ in $(seq 1 15); do
