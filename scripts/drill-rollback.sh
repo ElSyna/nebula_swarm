@@ -41,7 +41,8 @@ done
 duree=$(( $(date +%s) - debut ))
 
 titre "3. constat"
-docker service ps "${STACK}_$SVC" --no-trunc --format 'table {{.Name}}\t{{.Image}}\t{{.CurrentState}}\t{{.Error}}' | head -8
+docker service ps "${STACK}_$SVC" --no-trunc --format '{{.Name}}\t{{.Image}}\t{{.Node}}\t{{.CurrentState}}\t{{.Error}}' |
+  grep -E 'Running|defaut' | sed -e 's/@sha256:[0-9a-f]*//' -e 's/^/   /' 
 docker service inspect "${STACK}_$SVC" --format '   message : {{.UpdateStatus.Message}}'
 docker service inspect "${STACK}_$SVC" --format '   image du service : {{.Spec.TaskTemplate.ContainerSpec.Image}}'
 echo "   etat final : $etat, $duree s entre la mise a jour et la fin du retour arriere"
