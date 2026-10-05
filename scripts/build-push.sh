@@ -14,6 +14,11 @@ VERSION=${1:?usage : build-push.sh <version>   exemple : v1.0.0}
 [[ $VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || erreur "version attendue : vX.Y.Z (le tag latest est interdit)"
 [ -z "$(git status --porcelain)" ] || erreur "depot modifie : validez vos changements, le tag sha doit designer un commit"
 COMMIT=$(git rev-parse HEAD)
+# Si le tag git existe, il doit designer le commit que l'on construit.
+if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null &&
+   [ "$(git rev-parse "$VERSION^{commit}")" != "$COMMIT" ]; then
+  erreur "le tag git $VERSION ne designe pas le commit courant : placez-vous sur ce tag"
+fi
 SHA=sha-$(git rev-parse --short=7 HEAD)
 
 titre "1. controle : ni $VERSION ni $SHA ne doivent deja exister dans $REGISTRY"

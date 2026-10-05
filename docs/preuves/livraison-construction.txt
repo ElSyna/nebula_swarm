@@ -1,21 +1,23 @@
 # Livraison : construction, analyse, tag et publication de v1.1.0
-# releve du 2026-10-05 13:56 UTC, sur le manager, dans ~/nebula
+# releve du 2026-10-05 14:17 UTC, sur le manager
+# C'est la commande que lance le workflow CI sur un tag de version (.github/workflows/ci.yml),
+# dans une copie du depot placee sur ce tag.
 
-# commande lancee par le workflow CI sur un tag de version (.github/workflows/ci.yml)
-
+$ git -C ~/nebula worktree add ~/build-v1.1.0 v1.1.0 && cd ~/build-v1.1.0
+HEAD is now at a90b58d docs: README et procédures d'exploitation
 $ git describe --tags && git rev-parse --short HEAD
 v1.1.0
-4abb539
+a90b58d
 
 $ time ./scripts/build-push.sh v1.1.0
 
-== 1. controle : ni v1.1.0 ni sha-4abb539 ne doivent deja exister dans registry.local:5000
+== 1. controle : ni v1.1.0 ni sha-a90b58d ne doivent deja exister dans registry.local:5000
    libre
 
-== 2. construction (v1.1.0, sha-4abb539)
-sha256:cc4168d5dca22dfced0b956e2a655b8507664c5247b6d5293ed443f3b76e8a2e
-sha256:4e5310c1aa54fcc6f5f01d54ec9f8579dfc0f28238c3b2f876a80e168ca79f70
-sha256:908e755de2c48d53a5891743b3e3bf3cd2b2b7d33af9773e3cf90e34f07b0589
+== 2. construction (v1.1.0, sha-a90b58d)
+sha256:a08e1682d0854c0177e88db88cee56a33cdabf11eca5f4bc7274e8efa93df077
+sha256:08484a4b0cb2286993682408e2bf1be97aadac2ec70b326bd0a63ed18f9d9321
+sha256:aa91f6c00ac98f5bca53248a69d6f0d9076b3ec603e1636e219919c4296b5d9e
 
 == 3. analyse de vulnerabilites (bloquante)
 -- registry.local:5000/nebula-comptes:v1.1.0 (seuil : critical, avec correctif disponible)
@@ -87,18 +89,18 @@ undici           6.27.0     6.28.1    npm   GHSA-r53p-7pc4-xj5r  Low       0.2% 
 
 == 4. publication
 registry.local:5000/nebula-comptes:v1.1.0
-registry.local:5000/nebula-comptes:sha-4abb539
+registry.local:5000/nebula-comptes:sha-a90b58d
 registry.local:5000/nebula-publications:v1.1.0
-registry.local:5000/nebula-publications:sha-4abb539
+registry.local:5000/nebula-publications:sha-a90b58d
 registry.local:5000/nebula-worker-medias:v1.1.0
-registry.local:5000/nebula-worker-medias:sha-4abb539
+registry.local:5000/nebula-worker-medias:sha-a90b58d
 
 == images publiees
-   nebula-comptes  v1.1.0  sha-4abb539  registry.local:5000/nebula-comptes@sha256:cc4168d5dca22dfced0b956e2a655b8507664c5247b6d5293ed443f3b76e8a2e
-   nebula-publications  v1.1.0  sha-4abb539  registry.local:5000/nebula-publications@sha256:4e5310c1aa54fcc6f5f01d54ec9f8579dfc0f28238c3b2f876a80e168ca79f70
-   nebula-worker-medias  v1.1.0  sha-4abb539  registry.local:5000/nebula-worker-medias@sha256:908e755de2c48d53a5891743b3e3bf3cd2b2b7d33af9773e3cf90e34f07b0589
+   nebula-comptes  v1.1.0  sha-a90b58d  registry.local:5000/nebula-comptes@sha256:a08e1682d0854c0177e88db88cee56a33cdabf11eca5f4bc7274e8efa93df077
+   nebula-publications  v1.1.0  sha-a90b58d  registry.local:5000/nebula-publications@sha256:08484a4b0cb2286993682408e2bf1be97aadac2ec70b326bd0a63ed18f9d9321
+   nebula-worker-medias  v1.1.0  sha-a90b58d  registry.local:5000/nebula-worker-medias@sha256:aa91f6c00ac98f5bca53248a69d6f0d9076b3ec603e1636e219919c4296b5d9e
 
-duree : 174 s
+duree : 165 s
 
 # un tag publie est immuable : relancer la meme version est refuse
 $ ./scripts/build-push.sh v1.1.0
@@ -116,9 +118,11 @@ ERREUR : registry.local:5000/nebula-comptes:v1.1.0 : vulnerabilite high corrigea
 code de retour : 1
 
 # tracabilite : du tag au commit
-$ docker image inspect registry.local:5000/nebula-comptes:v1.1.0 --format ...
-org.opencontainers.image.revision=4abb539444f8776b900d7aa5f5770d75e5d499bf
+$ docker image inspect registry.local:5000/nebula-comptes:v1.1.0 --format '{{json .Config.Labels}} {{.RepoTags}}'
+org.opencontainers.image.revision=a90b58d730097821889138e016e5c968c0a58e6b
 org.opencontainers.image.version=v1.1.0
-registry.local:5000/nebula-comptes:sha-4abb539
+registry.local:5000/nebula-comptes:sha-a90b58d
 registry.local:5000/nebula-comptes:v1.1.0
 
+$ git log --oneline -1 v1.1.0
+a90b58d docs: README et procédures d'exploitation

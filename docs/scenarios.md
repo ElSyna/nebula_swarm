@@ -15,7 +15,7 @@ Sauf mention contraire, les commandes se lancent sur le manager, dans
 | 4 | Exposition | `make exposition` | port 80 seul publié ; base, bus, cache fermés |
 | 5 | Placement | `make status` | db et bus sur worker1, sans état sur manager et worker2 |
 | 6 | Montée en charge | `make scale S=comptes N=6` | 6 instances sur 2 nœuds, toutes servent du trafic |
-| 7 | Mise à jour sans interruption | `make deploy TAG=v1.1.0` | 1237 requêtes sur 1237 abouties |
+| 7 | Mise à jour sans interruption | `make deploy TAG=v1.1.0` | 1192 requêtes sur 1192 abouties, en 66 s |
 | 8 | Version défectueuse, retour arrière | `make drill` | retour arrière terminé en 55 s, 0 requête en échec |
 | 9 | Panne du plan de données | `make backup`, `make restore` | donnée conservée ; volume perdu puis restauré en 5 s |
 | 10 | Ajout d'un service | `make service NOM=... IMAGE=... PORT=...` | service routé en 18 s, les sept autres non redémarrés |

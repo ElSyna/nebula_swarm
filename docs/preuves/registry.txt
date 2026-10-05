@@ -1,47 +1,43 @@
 # Registry : images versionnees, recuperables par les trois machines
-# releve du 2026-10-05 14:09 UTC
+# releve du 2026-10-05 14:24 UTC
 
 [manager] $ docker compose -f infra/compose.yaml ps        (hors Swarm)
-SERVICE     STATUS         PORTS
-portainer   Up 2 minutes   8000/tcp, 9443/tcp, 127.0.0.1:9000->9000/tcp
-registry    Up 2 minutes   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+SERVICE     STATUS          PORTS
+portainer   Up 17 minutes   8000/tcp, 9443/tcp, 127.0.0.1:9000->9000/tcp
+registry    Up 17 minutes   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
 
-# contenu du registry (API, avec identifiants)
-mirror/grype                     v0.120.0
-mirror/node                      24-alpine
-mirror/postgres                  18-alpine
-mirror/rabbitmq                  4-management-alpine
-mirror/redis                     7-alpine
-mirror/traefik                   v3.3 v3.6.25
-mirror/whoami                    v1.11
-nebula-comptes                   sha-248705b sha-4abb539 sha-92e9cb6 sha-e7a0786 v0.1.0 v0.9.9 v0.9.9-defaut-sonde v1.0.0 v1.0.0-defaut-sonde v1.1.0
-nebula-publications              sha-248705b sha-4abb539 sha-92e9cb6 sha-e7a0786 v0.1.0 v0.9.9 v1.0.0 v1.1.0
-nebula-worker-medias             sha-248705b sha-4abb539 sha-92e9cb6 sha-e7a0786 v0.1.0 v0.9.9 v1.0.0 v1.1.0
+# contenu du registry (API, avec identifiants) : depot, puis tags
+mirror/grype           v0.120.0
+mirror/node            24-alpine
+mirror/postgres        18-alpine
+mirror/rabbitmq        4-management-alpine
+mirror/redis           7-alpine
+mirror/traefik         v3.3 v3.6.25
+mirror/whoami          v1.11
+nebula-comptes         sha-248705b sha-92e9cb6 sha-a90b58d sha-e7a0786 v0.1.0 v0.9.9 v0.9.9-defaut-sonde v1.0.0 v1.0.0-defaut-sonde v1.1.0
+nebula-publications    sha-248705b sha-92e9cb6 sha-a90b58d sha-e7a0786 v0.1.0 v0.9.9 v1.0.0 v1.1.0
+nebula-worker-medias   sha-248705b sha-92e9cb6 sha-a90b58d sha-e7a0786 v0.1.0 v0.9.9 v1.0.0 v1.1.0
 
 # sans identifiants
 curl https://registry.local:5000/v2/_catalog  -> HTTP 401
 
-# sur chaque machine : images tirees du registry, et meme empreinte que celle du service
+# sur chaque machine : l'image en service a ete tiree du registry, avec la meme empreinte
 service nebula_comptes : registry.local:5000/nebula-comptes:v1.0.0@sha256:85980af6744a702adfba8c13964673748c55e77876eb297760a644e926850c8d
 
 [manager] $ docker image ls --digests | grep registry.local
-registry.local:5000/mirror/node:24-alpine  sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
 registry.local:5000/mirror/postgres:18-alpine  sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
 registry.local:5000/mirror/postgres:18-alpine  sha256:d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66
 registry.local:5000/mirror/rabbitmq:4-management-alpine  sha256:3ef7f7e89fed709a78f79b8b5f4e30e1312a1d4089da752e23595566d9d61a95
 registry.local:5000/mirror/redis:7-alpine  sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
 registry.local:5000/mirror/redis:7-alpine  sha256:ca0acbb137c1dc3339c8b147a58fd6f42775d4599327b50e7b116c23de501af2
-registry.local:5000/mirror/traefik:v3.3  sha256:2cd5cc75530c8d07ae0587c743d23eb30cae2436d07017a5ff78498b1a43d09f
 registry.local:5000/mirror/traefik:v3.6.25  sha256:31267173a15b4944e797a76ffd9c419707c8d8b32fe5b610f80cd0cfa05f372d
 registry.local:5000/mirror/traefik:v3.6.25  sha256:996b026a32b1bb6c85c200e5cf25276c1caa84ddea6b1e3a33e78cdc5cbe8d0c
-registry.local:5000/mirror/whoami:v1.11  sha256:200689790a0a0ea48ca45992e0450bc26ccab5307375b41c84dfc4f2475937ab
-registry.local:5000/mirror/whoami:v1.11  sha256:4f90b33ddca9c4d4f06527070d6e503b16d71016edea036842be2a84e60c91cb
 registry.local:5000/nebula-comptes:v1.0.0  sha256:85980af6744a702adfba8c13964673748c55e77876eb297760a644e926850c8d
-registry.local:5000/nebula-comptes:v1.1.0  sha256:cc4168d5dca22dfced0b956e2a655b8507664c5247b6d5293ed443f3b76e8a2e
+registry.local:5000/nebula-comptes:v1.1.0  sha256:a08e1682d0854c0177e88db88cee56a33cdabf11eca5f4bc7274e8efa93df077
 registry.local:5000/nebula-publications:v1.0.0  sha256:932b9e96d6dfb8414a95b99221bcb48e5e0a5bd3066bca02cdfb0e78b336b80f
-registry.local:5000/nebula-publications:v1.1.0  sha256:4e5310c1aa54fcc6f5f01d54ec9f8579dfc0f28238c3b2f876a80e168ca79f70
+registry.local:5000/nebula-publications:v1.1.0  sha256:08484a4b0cb2286993682408e2bf1be97aadac2ec70b326bd0a63ed18f9d9321
 registry.local:5000/nebula-worker-medias:v1.0.0  sha256:6395f9db98bf1b56a22e2bb752773bde901b8bea82499a316c109468a6412164
-registry.local:5000/nebula-worker-medias:v1.1.0  sha256:908e755de2c48d53a5891743b3e3bf3cd2b2b7d33af9773e3cf90e34f07b0589
+registry.local:5000/nebula-worker-medias:v1.1.0  sha256:aa91f6c00ac98f5bca53248a69d6f0d9076b3ec603e1636e219919c4296b5d9e
 
 [worker1] $ docker image ls --digests | grep registry.local
 registry.local:5000/mirror/postgres:18-alpine  sha256:d8703cd7fba306b9fec9268ecedfa8a966846c053036a60e3635791957eb2f66
@@ -50,10 +46,12 @@ registry.local:5000/mirror/redis:7-alpine  sha256:ca0acbb137c1dc3339c8b147a58fd6
 
 [worker2] $ docker image ls --digests | grep registry.local
 registry.local:5000/mirror/redis:7-alpine  sha256:ca0acbb137c1dc3339c8b147a58fd6f42775d4599327b50e7b116c23de501af2
-registry.local:5000/mirror/whoami:v1.11  sha256:4f90b33ddca9c4d4f06527070d6e503b16d71016edea036842be2a84e60c91cb
 registry.local:5000/nebula-comptes:v1.0.0  sha256:85980af6744a702adfba8c13964673748c55e77876eb297760a644e926850c8d
+registry.local:5000/nebula-comptes:v1.1.0  sha256:a08e1682d0854c0177e88db88cee56a33cdabf11eca5f4bc7274e8efa93df077
 registry.local:5000/nebula-comptes:v1.1.0  sha256:cc4168d5dca22dfced0b956e2a655b8507664c5247b6d5293ed443f3b76e8a2e
 registry.local:5000/nebula-publications:v1.0.0  sha256:932b9e96d6dfb8414a95b99221bcb48e5e0a5bd3066bca02cdfb0e78b336b80f
+registry.local:5000/nebula-publications:v1.1.0  sha256:08484a4b0cb2286993682408e2bf1be97aadac2ec70b326bd0a63ed18f9d9321
 registry.local:5000/nebula-publications:v1.1.0  sha256:4e5310c1aa54fcc6f5f01d54ec9f8579dfc0f28238c3b2f876a80e168ca79f70
 registry.local:5000/nebula-worker-medias:v1.0.0  sha256:6395f9db98bf1b56a22e2bb752773bde901b8bea82499a316c109468a6412164
 registry.local:5000/nebula-worker-medias:v1.1.0  sha256:908e755de2c48d53a5891743b3e3bf3cd2b2b7d33af9773e3cf90e34f07b0589
+registry.local:5000/nebula-worker-medias:v1.1.0  sha256:aa91f6c00ac98f5bca53248a69d6f0d9076b3ec603e1636e219919c4296b5d9e

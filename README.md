@@ -154,7 +154,7 @@ Côté edge : sonde active de chaque tâche toutes les 3 s et rejeu d'une
 requête sur une autre tâche si la première ne répond pas.
 
 Mesures relevées ([docs/scenarios.md](docs/scenarios.md)) : mise à jour des
-trois services en 75 s, 1237 requêtes sur 1237 abouties pendant la mise à
+trois services en 66 s, 1192 requêtes sur 1192 abouties pendant la mise à
 jour ; version défectueuse détectée et retirée en 55 s, sans requête en
 échec. `db` et `bus` sont mis à jour en `stop-first` : un seul processus à
 la fois sur leur volume.
