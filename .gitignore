@@ -1,0 +1,13 @@
+# Aucun identifiant dans le depot : ni fichier d'environnement, ni cle, ni
+# certificat, ni sauvegarde.
+.env
+*.key
+*.crt
+*.csr
+*.pem
+*.dump
+htpasswd
+identifiants
+
+node_modules/
+.DS_Store
