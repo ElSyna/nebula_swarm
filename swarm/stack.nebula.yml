@@ -35,6 +35,7 @@ x-app: &app
     timeout: 3s
     retries: 3
     start_period: 20s
+    start_interval: 2s      # pendant le demarrage, sonde toutes les 2 s
 
 x-app-deploy: &app-deploy
   placement:
@@ -159,6 +160,7 @@ services:
       timeout: 3s
       retries: 5
       start_period: 30s
+      start_interval: 2s
     deploy:
       replicas: 1
       placement:
@@ -191,7 +193,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+      start_interval: 2s
     deploy:
       replicas: 1
       placement:
@@ -225,6 +228,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+      # Sans cela la premiere sonde n'aurait lieu qu'au bout de 30 s, et le
+      # bus resterait "en demarrage" bien apres etre pret.
+      start_interval: 3s
     deploy:
       replicas: 1
       placement:

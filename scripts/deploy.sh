@@ -33,7 +33,8 @@ echo "   secrets, etiquettes et images $TAG presents"
 
 # --with-registry-auth : transmet les identifiants du registry aux noeuds.
 titre "2. edge"
-docker stack deploy --detach=false --with-registry-auth -c swarm/stack.edge.yml edge
+# Lance sans attendre : l'edge demarre pendant le deploiement de nebula.
+docker stack deploy --detach=true --with-registry-auth -c swarm/stack.edge.yml edge
 
 titre "3. nebula ($TAG)"
 # Chaque fichier de swarm/services/ ajoute un service a la stack.
@@ -44,5 +45,13 @@ for f in swarm/services/*.yml; do
 done
 # --prune : retire un service qui n'est plus decrit dans les fichiers.
 docker stack deploy --detach=false --with-registry-auth --prune "${fichiers[@]}" "$STACK"
+
+titre "4. attente de l'edge"
+for _ in $(seq 1 60); do
+  r=$(docker service ls --filter name=edge_traefik --format '{{.Replicas}}')
+  [ -n "$r" ] && [ "${r%/*}" = "${r#*/}" ] && break
+  sleep 2
+done
+echo "   edge_traefik $r"
 
 "$RACINE/scripts/status.sh"
