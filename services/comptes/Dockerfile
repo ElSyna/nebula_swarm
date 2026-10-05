@@ -1,10 +1,12 @@
-# syntax=docker/dockerfile:1
-FROM node:24-alpine AS deps
+# Image de base parametrable : le cluster la tire de son registry prive
+# (--build-arg NODE_IMAGE=registry.local:5000/mirror/node:24-alpine).
+ARG NODE_IMAGE=node:24-alpine
+FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:24-alpine AS runtime
+FROM ${NODE_IMAGE} AS runtime
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000
 ARG APP_VERSION=dev
