@@ -37,6 +37,20 @@ x-app: &app
     start_period: 20s
     start_interval: 2s      # pendant le demarrage, sonde toutes les 2 s
 
+# Sonde des services qui parlent au bus. Les applications ne se reconnectent
+# pas d'elles-memes quand le bus redemarre, et leur route /health repond
+# toujours 200 : sans autre controle, elles resteraient en service, coupees
+# du bus. On verifie donc aussi qu'une connexion AMQP est ouverte. Si elle
+# est tombee, la tache est declaree en echec et Swarm la remplace : la
+# nouvelle se reconnecte. start_period couvre le demarrage du bus.
+x-sonde-bus: &sonde-bus
+  test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/health && netstat -tn | grep -q ':5672 .*ESTABLISHED'"]
+  interval: 5s
+  timeout: 3s
+  retries: 3
+  start_period: 60s
+  start_interval: 2s
+
 x-app-deploy: &app-deploy
   placement:
     constraints: [node.labels.tier == app]
@@ -103,6 +117,7 @@ services:
     # bus_password et cache_password sont lus par entrypoint.sh.
     secrets: [db_password, bus_password, cache_password]
     networks: [edge_public, internal]
+    healthcheck: *sonde-bus
     deploy:
       <<: *app-deploy
       replicas: 3
@@ -132,6 +147,7 @@ services:
       - worker_traces:/data
     # Aucun label traefik, aucun reseau public : le worker n'est pas route.
     networks: [internal]
+    healthcheck: *sonde-bus
     deploy:
       <<: *app-deploy
       replicas: 2
