@@ -6,4 +6,4 @@ providers:
     disableDeletion: true
     allowUiUpdates: false
     options:
-      path: /var/lib/grafana/tableaux
+      path: /etc/grafana/tableaux

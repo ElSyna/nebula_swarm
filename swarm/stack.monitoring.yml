@@ -61,7 +61,7 @@ services:
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/tableaux/nebula.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/tableaux/nebula.json
     secrets: [grafana_password]
     configs:
       # Source de donnees et tableau de bord sont des fichiers du depot :
@@ -71,7 +71,14 @@ services:
       - source: grafana_tableaux
         target: /etc/grafana/provisioning/dashboards/nebula.yml
       - source: grafana_tableau_nebula
-        target: /var/lib/grafana/tableaux/nebula.json
+        target: /etc/grafana/tableaux/nebula.json
+    volumes:
+      # La base interne de Grafana vit en memoire. Sur disque, sa creation au
+      # premier demarrage depassait le delai de la sonde, et rien n'y est a
+      # conserver : source et tableau de bord viennent des fichiers ci-dessus.
+      - type: tmpfs
+        target: /var/lib/grafana
+        tmpfs: { size: 100000000 }
     networks: [edge_public, internal]
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
