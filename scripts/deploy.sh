@@ -22,7 +22,7 @@ export REGISTRY TAG
 AVANT=$(docker service inspect "${STACK}_comptes" --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}' 2>/dev/null | sed -e 's/@.*//' -e 's/.*://' || true)
 
 titre "1. prerequis"
-for s in nebula_db_password nebula_cache_password nebula_bus_password nebula_bus_definitions edge_admin_users; do
+for s in nebula_db_password nebula_cache_password nebula_bus_password nebula_bus_definitions nebula_grafana_password edge_admin_users; do
   docker secret inspect "$s" >/dev/null 2>&1 || erreur "secret $s absent : lancez make secrets"
 done
 [ -n "$(docker node ls -q --filter node.label=tier=data)" ] || erreur "aucun noeud etiquete tier=data (cluster/20-swarm.sh)"
@@ -49,14 +49,19 @@ done
 # --prune : retire un service qui n'est plus decrit dans les fichiers.
 docker stack deploy --detach=true --with-registry-auth --prune "${fichiers[@]}" "$STACK"
 
-titre "4. convergence"
-# Termine quand chaque service a toutes ses instances et qu'aucune mise a
-# jour (ou retour arriere) n'est en cours.
+titre "4. supervision"
+# Prometheus et Grafana empruntent le reseau interne de nebula : apres elle.
+docker stack deploy --detach=true --with-registry-auth -c swarm/stack.monitoring.yml monitoring
+
+titre "5. convergence"
+# Termine quand chaque service de l'edge et de nebula a toutes ses instances
+# et qu'aucune mise a jour (ou retour arriere) n'est en cours. La supervision
+# demarre en parallele : on ne l'attend pas, son etat est affiche a la fin.
 debut=$SECONDS; vu=""
 sleep 2
 for _ in $(seq 1 240); do
-  instances=$(docker service ls --format '{{.Name}}={{.Replicas}}' | sort | tr '\n' ' ')
-  majs=$(docker service inspect $(docker service ls -q) \
+  instances=$(docker service ls --format '{{.Name}}={{.Replicas}}' | grep -v '^monitoring_' | sort | tr '\n' ' ')
+  majs=$(docker service inspect $(docker service ls --format '{{.Name}}' | grep -v '^monitoring_') \
     --format '{{if .UpdateStatus}}{{.Spec.Name}}:{{.UpdateStatus.State}} {{end}}' | tr -d '\n')
   attente=$(tr ' ' '\n' <<< "$instances" | awk -F'[=/]' 'NF==3 && $2 < $3 {print $1}' | tr '\n' ' ')
   encours=$(tr ' ' '\n' <<< "$majs" | grep -E ':(updating|rollback_started)$' | tr '\n' ' ' || true)
@@ -78,7 +83,7 @@ for s in $SERVICES_APP; do
   esac
 done
 
-titre "5. l'edge route les services"
+titre "6. l'edge route les services"
 # L'edge relit l'etat du cluster toutes les 5 s et sonde chaque tache avant
 # de lui envoyer du trafic : on attend que les routes repondent.
 for s in comptes publications; do

@@ -1,0 +1,172 @@
+# ===========================================================================
+# SUPERVISION : Prometheus collecte les indicateurs, Grafana les affiche.
+#
+#   deployee par make deploy, apres nebula dont elle emprunte le reseau
+#   interne ; retiree par make destroy.
+#
+# Quatre sources : l'edge (requetes, erreurs, durees), les machines, les
+# conteneurs et le bus. Aucun port n'est publie : Grafana est route par
+# l'edge sur /grafana, derriere son propre mot de passe. Prometheus n'est
+# joignable que depuis le reseau interne.
+# ===========================================================================
+
+services:
+
+  prometheus:
+    image: ${REGISTRY:-registry.local:5000}/mirror/prometheus:v3.15.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    configs:
+      - source: prometheus
+        target: /etc/prometheus/prometheus.yml
+    volumes:
+      - prometheus_data:/prometheus
+    # edge_public pour interroger chaque instance de l'edge, internal pour le
+    # reste. Prometheus ouvre toutes les connexions : il doit etre sur un
+    # noeud tier=app, le noeud de donnees n'ayant pas le droit d'en ouvrir.
+    networks: [edge_public, internal]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
+    deploy:
+      replicas: 1
+      placement:
+        # Le volume de l'historique est local au manager.
+        constraints: [node.role == manager]
+      resources:
+        limits: { cpus: "0.50", memory: 512M }
+        reservations: { memory: 128M }
+      restart_policy: { condition: any, delay: 5s }
+      update_config:
+        order: stop-first      # un seul processus sur le volume
+        failure_action: rollback
+
+  grafana:
+    image: ${REGISTRY:-registry.local:5000}/mirror/grafana:13.2.3
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_password
+      # Servi sous /grafana par l'edge.
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Aucun appel vers l'exterieur.
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/tableaux/nebula.json
+    secrets: [grafana_password]
+    configs:
+      # Source de donnees et tableau de bord sont des fichiers du depot :
+      # Grafana n'a aucun etat a sauvegarder.
+      - source: grafana_source
+        target: /etc/grafana/provisioning/datasources/prometheus.yml
+      - source: grafana_tableaux
+        target: /etc/grafana/provisioning/dashboards/nebula.yml
+      - source: grafana_tableau_nebula
+        target: /var/lib/grafana/tableaux/nebula.json
+    networks: [edge_public, internal]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 3s
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.tier == app]
+      resources:
+        limits: { cpus: "0.50", memory: 320M }
+        reservations: { memory: 96M }
+      restart_policy: { condition: any, delay: 5s }
+      update_config:
+        order: start-first
+        failure_action: rollback
+      labels:
+        - traefik.enable=true
+        - traefik.http.services.grafana.loadbalancer.server.port=3000
+        - traefik.http.routers.grafana.rule=PathPrefix(`/grafana`)
+        - traefik.http.routers.grafana.entrypoints=web
+
+  # Une instance par machine : processeur, memoire, disque de la machine.
+  node-exporter:
+    image: ${REGISTRY:-registry.local:5000}/mirror/node-exporter:v1.12.1
+    # Le nom de la machine devient le nom du conteneur : c'est lui qu'on lit
+    # dans les graphiques, a la place d'une adresse.
+    hostname: "{{.Node.Hostname}}"
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|run|boot|var/lib/docker/.+)($$|/)
+    volumes:
+      - type: bind
+        source: /
+        target: /host
+        read_only: true
+        bind: { propagation: rslave }
+    networks: [internal]
+    deploy:
+      mode: global
+      resources:
+        limits: { cpus: "0.25", memory: 64M }
+      restart_policy: { condition: any, delay: 5s }
+
+  # Une instance par machine : processeur et memoire de chaque conteneur.
+  cadvisor:
+    image: ${REGISTRY:-registry.local:5000}/mirror/cadvisor:v0.55.1
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=30s
+      # On ne garde que l'etiquette qui donne le service Swarm du conteneur.
+      - --store_container_labels=false
+      - --whitelisted_container_labels=com.docker.swarm.service.name
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks: [internal]
+    deploy:
+      mode: global
+      resources:
+        limits: { cpus: "0.30", memory: 192M }
+      restart_policy: { condition: any, delay: 5s }
+
+networks:
+  edge_public:
+    external: true
+  # Reseau interne de la stack nebula.
+  internal:
+    external: true
+    name: nebula_internal
+
+volumes:
+  prometheus_data:
+
+configs:
+  prometheus:
+    name: nebula_prometheus_v1
+    file: ../config/prometheus.yml
+  grafana_source:
+    name: nebula_grafana_source_v1
+    file: ../config/grafana/datasource.yml
+  grafana_tableaux:
+    name: nebula_grafana_tableaux_v1
+    file: ../config/grafana/tableaux.yml
+  grafana_tableau_nebula:
+    name: nebula_grafana_tableau_v1
+    file: ../config/grafana/nebula.json
+
+secrets:
+  grafana_password:
+    external: true
+    name: nebula_grafana_password

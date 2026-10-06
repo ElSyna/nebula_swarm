@@ -51,5 +51,15 @@ else
   echo "   edge_admin_users : cree (identifiants dans $IDENTIFIANTS)"
 fi
 
+if existe nebula_grafana_password; then
+  echo "   nebula_grafana_password : deja present"
+else
+  mdp=${GRAFANA_PASSWORD:-$(alea)}
+  printf '%s' "$mdp" | docker secret create nebula_grafana_password - >/dev/null
+  noter GRAFANA_USER admin
+  noter GRAFANA_PASSWORD "$mdp"
+  echo "   nebula_grafana_password : cree (identifiants dans $IDENTIFIANTS)"
+fi
+
 echo
 docker secret ls --format 'table {{.Name}}\t{{.CreatedAt}}'

@@ -49,7 +49,7 @@ elif [[ $image != */* ]]; then
   # les tirages par adresse IP.
   sources=("public.ecr.aws/docker/library/$image" "docker.io/library/$image")
 else
-  sources=("docker.io/$image" "ghcr.io/$image" "quay.io/$image")
+  sources=("docker.io/$image" "mirror.gcr.io/$image" "ghcr.io/$image" "quay.io/$image")
 fi
 for source in "${sources[@]}"; do
   if copier "$source" "$nom"; then

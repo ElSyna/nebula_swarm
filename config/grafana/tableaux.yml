@@ -1,0 +1,9 @@
+# Chargement des tableaux de bord depuis des fichiers (config Swarm).
+apiVersion: 1
+providers:
+  - name: nebula
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/tableaux

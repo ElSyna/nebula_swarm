@@ -16,3 +16,8 @@ ghcr.io/anchore/grype:v0.120.0                               grype:v0.120.0
 public.ecr.aws/docker/library/nginx:1.29-alpine              nginx:1.29-alpine
 public.ecr.aws/docker/library/httpd:2.4-alpine               httpd:2.4-alpine
 public.ecr.aws/docker/library/busybox:1.37                   busybox:1.37
+# Supervision (swarm/stack.monitoring.yml).
+quay.io/prometheus/prometheus:v3.15.0                        prometheus:v3.15.0
+quay.io/prometheus/node-exporter:v1.12.1                     node-exporter:v1.12.1
+gcr.io/cadvisor/cadvisor:v0.55.1                             cadvisor:v0.55.1
+docker.io/grafana/grafana:13.2.3                             grafana:13.2.3

@@ -15,7 +15,7 @@ titre "services"
 docker service ls --format 'table {{.Name}}\t{{.Mode}}\t{{.Replicas}}\t{{.Image}}\t{{.Ports}}'
 
 titre "instances (service, version, machine)"
-for st in edge "$STACK"; do
+for st in edge "$STACK" monitoring; do
   docker stack ps "$st" --filter desired-state=running \
     --format '{{.Name}}\t{{.Image}}\t{{.Node}}\t{{.CurrentState}}' 2>/dev/null || true
 done | sort | column -t -s "$(printf '\t')"

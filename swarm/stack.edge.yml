@@ -36,6 +36,9 @@ services:
       # ils ne sont servis que par le routeur "metrics" ci-dessous.
       - --metrics.prometheus=true
       - --metrics.prometheus.manualRouting=true
+      # Port interne, non publie, par lequel Prometheus lit ces indicateurs
+      # sur chaque instance (swarm/stack.monitoring.yml).
+      - --entryPoints.metrics.address=:8082
     ports:
       # Le seul port publie du cluster. mode ingress : chaque noeud l'ecoute et
       # la charge est repartie entre les replicas de l'edge. Le pare-feu le
@@ -96,6 +99,10 @@ services:
         - traefik.http.routers.metrics.entrypoints=web
         - traefik.http.routers.metrics.service=prometheus@internal
         - traefik.http.routers.metrics.middlewares=admin-auth
+        # --- les memes indicateurs pour Prometheus, sur le port interne ------
+        - traefik.http.routers.metrics-interne.rule=PathPrefix(`/metrics`)
+        - traefik.http.routers.metrics-interne.entrypoints=metrics
+        - traefik.http.routers.metrics-interne.service=prometheus@internal
 
 networks:
   # Reseau du flux public : l'edge et les services qu'il route, rien d'autre.

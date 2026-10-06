@@ -1,0 +1,38 @@
+# Collecte des indicateurs (config Swarm). Prometheus interroge chaque source
+# toutes les 15 s. Les taches d'un service sont trouvees par le DNS du Swarm :
+# tasks.<service> renvoie une adresse par tache.
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  # Edge : requetes, codes de reponse et durees, par service route.
+  - job_name: edge
+    dns_sd_configs:
+      - names: [tasks.edge_traefik]
+        type: A
+        port: 8082
+
+  # Machines : processeur, memoire, disque.
+  - job_name: machines
+    dns_sd_configs:
+      - names: [tasks.monitoring_node-exporter]
+        type: A
+        port: 9100
+
+  # Conteneurs : processeur et memoire, par service Swarm.
+  - job_name: conteneurs
+    dns_sd_configs:
+      - names: [tasks.monitoring_cadvisor]
+        type: A
+        port: 8080
+
+  # Bus : messages et consommateurs, file par file.
+  - job_name: bus
+    metrics_path: /metrics/per-object
+    static_configs:
+      - targets: ['bus:15692']
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['127.0.0.1:9090']
