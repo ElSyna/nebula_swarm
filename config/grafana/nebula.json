@@ -723,7 +723,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "sum by (container_label_com_docker_swarm_service_name) (max by (container_label_com_docker_swarm_service_name, name) (rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name!=\"\"}[1m])))",
+     "expr": "sum by (container_label_com_docker_swarm_service_name) (max by (container_label_com_docker_swarm_service_name, name) (rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name!=\"\"}[2m])))",
      "legendFormat": "{{container_label_com_docker_swarm_service_name}}",
      "instant": false
     }
