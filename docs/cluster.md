@@ -221,7 +221,16 @@ REPO=https://github.com/<compte>/<depot> JETON=<jeton> ./cluster/50-runner.sh
 ```
 
 Le jeton d'enregistrement se lit dans GitHub (Settings > Actions > Runners >
-New self-hosted runner). Deux secrets sont à créer dans le dépôt GitHub
-(Settings > Secrets and variables > Actions) : `REGISTRY_USER` et
-`REGISTRY_PASSWORD`, dont les valeurs sont dans `~/.nebula/identifiants` sur
-le manager.
+New self-hosted runner). Le script installe aussi les bibliothèques dont le
+runner a besoin (`libicu`). Côté GitHub :
+
+- deux secrets du dépôt (Settings > Secrets and variables > Actions),
+  `REGISTRY_USER` et `REGISTRY_PASSWORD`, dont les valeurs sont dans
+  `~/.nebula/identifiants` sur le manager ;
+- un environnement `production` (Settings > Environments), utilisé par le
+  workflow de déploiement. On peut y exiger une validation avant exécution.
+
+Le runner n'ouvre que des connexions sortantes vers GitHub : le pare-feu n'a
+aucune ouverture pour lui.
+
+Preuve : [preuves/livraison-github-actions.txt](preuves/livraison-github-actions.txt).

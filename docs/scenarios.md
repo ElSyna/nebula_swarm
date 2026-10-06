@@ -194,6 +194,8 @@ Preuve : [scenario-10-ajout-service.txt](preuves/scenario-10-ajout-service.txt).
 
 ## Autres relevés
 
+- [livraison-github-actions.txt](preuves/livraison-github-actions.txt) :
+  exécutions GitHub Actions de la CI (tag `v1.2.0`) et du CD.
 - [livraison-construction.txt](preuves/livraison-construction.txt) :
   construction, analyse, tag et publication de v1.1.0 ; refus d'un tag déjà
   publié ; refus de publication quand l'analyse dépasse le seuil.

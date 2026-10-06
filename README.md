@@ -183,8 +183,14 @@ git tag v1.1.0 ──> CI : construit ─> analyse ─> tague ─> publie      (
   du dépôt GitHub. Le déploiement passe par le socket Docker du manager,
   sans clé SSH.
 
-Preuve d'exécution de l'enchaînement :
-[docs/preuves/livraison-construction.txt](docs/preuves/livraison-construction.txt).
+Preuves d'exécution :
+
+- [docs/preuves/livraison-github-actions.txt](docs/preuves/livraison-github-actions.txt) :
+  la CI sur le tag `v1.2.0`, puis le CD déclenché à la main avec ce tag,
+  avec les liens des exécutions et des extraits de leurs journaux ;
+- [docs/preuves/livraison-construction.txt](docs/preuves/livraison-construction.txt) :
+  le même script lancé sur le manager, le refus d'un tag déjà publié et le
+  refus de publication quand l'analyse dépasse le seuil.
 
 ## Exploitation
 

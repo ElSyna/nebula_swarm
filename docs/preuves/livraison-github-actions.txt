@@ -1,0 +1,83 @@
+# Livraison par GitHub Actions : preuve d'execution
+# depot https://github.com/ElSyna/nebula_swarm, runner auto-heberge "manager" (etiquette nebula)
+# releve du 2026-10-06 07:18 UTC par l'API GitHub
+# Dans les journaux, GitHub remplace par *** la valeur des secrets : le nom du compte du
+# registry etant "nebula", ce mot y apparait masque.
+
+## Executions
+CD  workflow_dispatch  main    completed  success  https://github.com/ElSyna/nebula_swarm/actions/runs/37428621390
+CI  push               v1.2.0  completed  success  https://github.com/ElSyna/nebula_swarm/actions/runs/37428184231
+CI  push               main    completed  success  https://github.com/ElSyna/nebula_swarm/actions/runs/37428176386
+CI  push               main    completed  success  https://github.com/ElSyna/nebula_swarm/actions/runs/37427800322
+
+## CI sur le tag v1.2.0 : construit, analyse, tague, publie, sans intervention
+$ git tag v1.2.0 && git push origin v1.2.0
+job publier completed success manager 2026-10-06T07:12:02Z 2026-10-06T07:15:52Z https://github.com/ElSyna/nebula_swarm/actions/runs/37428184231/job/112152563486
+    1 Set up job success
+    2 Run actions/checkout@v4 success
+    3 Connexion au registry success
+    4 Construire, analyser, taguer, publier success
+    5 Effacer les identifiants success
+    10 Post Run actions/checkout@v4 success
+    11 Complete job success
+
+# extrait du journal de l'etape "Construire, analyser, taguer, publier"
+== 1. controle : ni v1.2.0 ni sha-b76d205 ne doivent deja exister dans registry.local:5000
+   libre
+== 2. construction (v1.2.0, sha-b76d205)
+== 3. analyse de vulnerabilites (bloquante)
+   aucune vulnerabilite critical corrigeable
+   aucune vulnerabilite critical corrigeable
+   aucune vulnerabilite critical corrigeable
+== 4. publication
+registry.local:5000/***-comptes:v1.2.0
+registry.local:5000/***-comptes:sha-b76d205
+registry.local:5000/***-publications:v1.2.0
+registry.local:5000/***-publications:sha-b76d205
+registry.local:5000/***-worker-medias:v1.2.0
+registry.local:5000/***-worker-medias:sha-b76d205
+== images publiees
+   ***-comptes  v1.2.0  sha-b76d205  registry.local:5000/***-comptes@sha256:84a11437550e44a5c00b1ad7f8caa3657f1b6691150af6bbe6543a03d57e797b
+   ***-publications  v1.2.0  sha-b76d205  registry.local:5000/***-publications@sha256:b006af212b4a90175cccea49d03ef99b7f7f4836fae72cfb86fe0d25ab005ee1
+   ***-worker-medias  v1.2.0  sha-b76d205  registry.local:5000/***-worker-medias@sha256:35c7a674c3b6b3c883702569e3c056ae9e1f0585cf5b22e140d7daa078b2c7cb
+
+## CD declenche a la main avec le tag v1.2.0 : deploie l'image publiee, sans reconstruire
+# Actions > CD > Run workflow, tag = v1.2.0, environnement production
+job deployer completed success manager 2026-10-06T07:16:19Z 2026-10-06T07:17:39Z https://github.com/ElSyna/nebula_swarm/actions/runs/37428621390/job/112153958072
+    1 Set up job success
+    2 Run actions/checkout@v4 success
+    3 Connexion au registry success
+    4 Deployer success
+    5 Verifier la chaine applicative success
+    6 Etat du cluster success
+    7 Effacer les identifiants success
+    14 Post Run actions/checkout@v4 success
+    15 Complete job success
+
+# extrait du journal des etapes "Deployer" et "Verifier la chaine applicative"
+== 1. prerequis
+   secrets, etiquettes et images v1.2.0 presents
+== 2. edge
+== 3. *** (v1.2.0)
+== 4. convergence
+   +  3s  en cours : ***_comptes:updating ***_publications:updating ***_worker-medias:updating 
+   + 42s  en cours : ***_comptes:updating ***_publications:updating 
+   + 55s  en cours : ***_publications:updating 
+   + 57s  tous les services sont a leur nombre d instances
+== 5. l'edge route les services
+   /health/comptes : HTTP 200
+   /health/publications : HTTP 200
+***_comptes         replicated   3/3        registry.local:5000/***-comptes:v1.2.0                 
+***_publications    replicated   3/3        registry.local:5000/***-publications:v1.2.0            
+***_worker-medias   replicated   2/2        registry.local:5000/***-worker-medias:v1.2.0           
+  sante de comptes                              OK
+  sante de publications                         OK
+  creation d'un compte (id=25)                  OK
+  lecture du compte                             OK
+  publication, auteur verifie (id=25)           OK
+  auteur inconnu refuse (HTTP 400)              OK
+  fil : 1re lecture depuis la base (db)         OK
+  fil : 2e lecture depuis le cache (cache)      OK
+***_comptes         replicated   3/3        registry.local:5000/***-comptes:v1.2.0                 
+***_publications    replicated   3/3        registry.local:5000/***-publications:v1.2.0            
+***_worker-medias   replicated   2/2        registry.local:5000/***-worker-medias:v1.2.0           
