@@ -14,7 +14,10 @@ adaptés : image de base paramétrable, dossier des traces du worker.
 
 ## Architecture
 
-![Architecture de Nebula : flux entre services avec leurs ports, et placement sur les trois machines](docs/architecture.svg)
+![Architecture de Nebula : flux entre services avec leurs ports, supervision, et ouvertures entre les trois machines](docs/architecture.svg)
+
+Le schéma a trois parties : les flux de l'application, la supervision, et
+les ouvertures du pare-feu entre les machines.
 
 `comptes` et `publications` sont sur les deux réseaux : `edge_public` pour
 recevoir le trafic de l'edge, `nebula_internal` pour joindre la base, le
