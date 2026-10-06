@@ -124,6 +124,7 @@ services:
         read_only: true
         bind: { propagation: rslave }
     networks: [internal]
+    stop_grace_period: 3s
     deploy:
       mode: global
       resources:
@@ -146,6 +147,7 @@ services:
       - /var/lib/docker:/var/lib/docker:ro
       - /dev/disk:/dev/disk:ro
     networks: [internal]
+    stop_grace_period: 3s
     deploy:
       mode: global
       resources:

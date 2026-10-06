@@ -29,6 +29,7 @@ jobs:
           docker swarm init >/dev/null
           REGISTRY=registry.local:5000 TAG=v0.0.0 docker stack config -c swarm/stack.nebula.yml >/dev/null
           docker stack config -c swarm/stack.edge.yml >/dev/null
+          docker stack config -c swarm/stack.monitoring.yml >/dev/null
       - name: Construction des images (sans publication)
         run: for s in comptes publications worker-medias; do docker build -q "services/$s"; done
 

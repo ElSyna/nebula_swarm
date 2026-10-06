@@ -49,14 +49,9 @@ done
 # --prune : retire un service qui n'est plus decrit dans les fichiers.
 docker stack deploy --detach=true --with-registry-auth --prune "${fichiers[@]}" "$STACK"
 
-titre "4. supervision"
-# Prometheus et Grafana empruntent le reseau interne de nebula : apres elle.
-docker stack deploy --detach=true --with-registry-auth -c swarm/stack.monitoring.yml monitoring
-
-titre "5. convergence"
+titre "4. convergence"
 # Termine quand chaque service de l'edge et de nebula a toutes ses instances
-# et qu'aucune mise a jour (ou retour arriere) n'est en cours. La supervision
-# demarre en parallele : on ne l'attend pas, son etat est affiche a la fin.
+# et qu'aucune mise a jour (ou retour arriere) n'est en cours.
 debut=$SECONDS; vu=""
 sleep 2
 for _ in $(seq 1 240); do
@@ -83,11 +78,18 @@ for s in $SERVICES_APP; do
   esac
 done
 
-titre "6. l'edge route les services"
+titre "5. l'edge route les services"
 # L'edge relit l'etat du cluster toutes les 5 s et sonde chaque tache avant
 # de lui envoyer du trafic : on attend que les routes repondent.
 for s in comptes publications; do
   attendre_route "/health/$s" || erreur "/health/$s ne repond pas a travers l'edge"
 done
+
+titre "6. supervision"
+# Prometheus et Grafana empruntent les reseaux de l'edge et de nebula. Ils
+# sont lances une fois l'application en service, et on ne les attend pas :
+# la supervision ne retarde jamais un deploiement.
+docker stack deploy --detach=true --with-registry-auth -c swarm/stack.monitoring.yml monitoring 2>&1 | grep -v '^$' || true
+echo "   Grafana : $BASE_URL/grafana (pret en une minute environ)"
 
 "$RACINE/scripts/status.sh"
