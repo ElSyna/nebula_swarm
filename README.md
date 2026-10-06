@@ -204,7 +204,7 @@ Sur le manager, dans `~/nebula`. `make help` liste les commandes.
 | Vérifier la chaîne applicative | `make smoke` |
 | Changer le nombre d'instances | `make scale S=comptes N=5` |
 | Déployer ou mettre à jour | `make deploy TAG=v1.1.0` |
-| Sauvegarder, restaurer la base | `make backup`, `make restore` |
+| Sauvegarder, restaurer la base | `make backup`, `make restore`. Sauvegarde automatique chaque jour ; `make status` affiche la dernière et la prochaine |
 | Messages en attente et en erreur sur le bus | `make bus` |
 | Ports qui répondent sur chaque nœud | `make exposition` |
 | Ajouter un service | `make service NOM=... IMAGE=... PORT=...` |
@@ -226,8 +226,9 @@ l'edge n'est pas modifié.
 - **Le manager est un point de défaillance unique** : plan de contrôle, edge,
   registry et runner. Choix justifié dans [docs/cluster.md](docs/cluster.md).
 - **Une seule instance de base**, sur worker1. La perte de worker1 arrête
-  Nebula jusqu'à son retour ou jusqu'à une restauration. Les sauvegardes sont
-  lancées à la main (`make backup`) et rangées sur le manager uniquement.
+  Nebula jusqu'à son retour ou jusqu'à une restauration. Elle est sauvegardée
+  chaque jour à 02:30 UTC (14 sauvegardes conservées), sur le manager
+  uniquement : il n'y a pas de copie hors du cluster.
 - **Traces du worker** : volume local, un par nœud. Les traces sont réparties
   sur les nœuds `tier=app`.
 - **Pas de chiffrement du point d'entrée** : HTTP sur le port 80.

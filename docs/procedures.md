@@ -53,8 +53,9 @@ fois : un second appel remettrait la version retirée.
 
 ## 5. Restauration des données
 
-Sauvegarder (avant chaque mise à jour, et régulièrement) : `make backup`
-écrit un fichier dans `/srv/nebula/backups/` sur le manager.
+Une sauvegarde est faite chaque jour à 02:30 UTC dans
+`/srv/nebula/backups/` sur le manager (14 conservées). Avant une mise à
+jour, en ajouter une : `make backup`.
 
 1. `ls -lt /srv/nebula/backups/` : choisir la sauvegarde.
 2. `make restore` restaure la plus récente ; `make restore F=/srv/nebula/backups/<fichier>` une autre.

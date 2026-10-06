@@ -11,7 +11,8 @@ création des machines (sur l'hôte Proxmox).
 | 4. Poser le pare-feu | `./cluster/25-parefeu.sh` |
 | 5. Déposer le dépôt sur le manager | `./cluster/30-depot.sh` |
 | 6. Registry, images tierces, Portainer | `./cluster/40-infra.sh` |
-| 7. Runner de livraison | `./cluster/50-runner.sh` |
+| 7. Planifier les sauvegardes | `./cluster/45-sauvegardes.sh` |
+| 8. Runner de livraison | `./cluster/50-runner.sh` |
 
 Les scripts 10 à 40 sont rejouables : ce qui est déjà en place n'est pas modifié.
 Le cluster est ensuite prêt pour le déploiement initial ([procedures.md](procedures.md)).
@@ -210,7 +211,22 @@ Ce qui n'est pas dans le dépôt, et où cela se trouve sur le manager :
 
 Preuve : [preuves/registry.txt](preuves/registry.txt).
 
-## 6. Runner de livraison
+## 6. Sauvegardes planifiées
+
+`cluster/45-sauvegardes.sh` installe sur le manager un minuteur systemd,
+`nebula-sauvegarde.timer`, hors Swarm. Chaque jour à 02:30 UTC il lance
+`~/nebula/scripts/backup.sh`, la commande de `make backup`. Si la machine
+était éteinte à cette heure, la sauvegarde part au démarrage suivant
+(`Persistent=true`). Les 14 sauvegardes les plus récentes sont conservées ;
+le ménage n'a lieu qu'après une sauvegarde réussie.
+
+- Heure et nombre conservé : `HEURE="*-*-* 03:00:00" GARDER=30 ./cluster/45-sauvegardes.sh`
+- Dernière exécution : `journalctl -u nebula-sauvegarde.service`
+- Dernière et prochaine sauvegarde : `make status`
+
+Preuve : [preuves/sauvegarde-planifiee.txt](preuves/sauvegarde-planifiee.txt).
+
+## 7. Runner de livraison
 
 Le registry et le manager sont sur un réseau privé : un runner hébergé par
 GitHub ne peut pas les joindre. `cluster/50-runner.sh` installe le runner

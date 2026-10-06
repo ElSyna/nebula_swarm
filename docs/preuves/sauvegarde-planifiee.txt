@@ -1,0 +1,43 @@
+# Sauvegarde planifiee de la base
+# releve du 2026-10-06 07:40 UTC
+
+## Declenchement par le minuteur (heure de test : 07:40 UTC)
+[manager] $ journalctl -u nebula-sauvegarde.service
+2026-10-06T07:40:00+00:00 Starting nebula-sauvegarde.service - Sauvegarde de la base Nebula...
+2026-10-06T07:40:00+00:00 == sauvegarde de la base vers /srv/nebula/backups/nebula-20261006T074000Z.dump
+2026-10-06T07:40:07+00:00    tables : 2
+2026-10-06T07:40:07+00:00    comptes : 27
+2026-10-06T07:40:07+00:00    publications : 27
+2026-10-06T07:40:07+00:00 -rw-r--r-- 1 root root 6.6K Oct  6 07:40 /srv/nebula/backups/nebula-20261006T074000Z.dump
+2026-10-06T07:40:07+00:00 nebula-sauvegarde.service: Deactivated successfully.
+2026-10-06T07:40:07+00:00 Finished nebula-sauvegarde.service - Sauvegarde de la base Nebula.
+Result=success ExecMainStatus=0 
+
+## La sauvegarde produite par le minuteur se restaure
+[manager] $ make restore
+
+== restauration de /srv/nebula/backups/nebula-20261006T074000Z.dump
+   comptes : 27
+   publications : 27
+   restauration terminee (le cache du fil expire en 30 s)
+8 controles OK apres restauration (make smoke)
+
+## Planification definitive
+[poste] $ ./cluster/45-sauvegardes.sh
+NEXT                        LEFT LAST                         PASSED UNIT                    ACTIVATES
+Wed 2026-10-07 02:30:00 UTC  18h Tue 2026-10-06 07:40:00 UTC 37s ago nebula-sauvegarde.timer nebula-sauvegarde.service
+   14 sauvegardes conservees dans /srv/nebula/backups
+
+[manager] $ systemctl cat nebula-sauvegarde.timer | grep -E "OnCalendar|Persistent"
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+enabled
+
+## Retention : seules les N plus recentes sont conservees (essai dans un dossier de test, N = 2)
+[manager] $ BACKUP_DIR=/tmp/nebula-test-sauvegardes BACKUP_KEEP=2 ./scripts/backup.sh    (3 anciens fichiers presents)
+   2 ancienne(s) sauvegarde(s) supprimee(s), 2 conservees
+
+[manager] $ make status | tail -3
+== sauvegardes de la base
+   derniere : nebula-20261006T074000Z.dump, il y a 0 h
+   prochaine : Wed 2026-10-07 02:30:00 UTC
