@@ -18,6 +18,8 @@ if [ -z "${TAG:-}" ]; then
 fi
 [ "$TAG" != latest ] || erreur "le tag latest est interdit"
 export REGISTRY TAG
+# Version en service avant ce deploiement, pour dire comment y revenir.
+AVANT=$(docker service inspect "${STACK}_comptes" --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}' 2>/dev/null | sed -e 's/@.*//' -e 's/.*://' || true)
 
 titre "1. prerequis"
 for s in nebula_db_password nebula_cache_password nebula_bus_password nebula_bus_definitions edge_admin_users; do
@@ -69,7 +71,11 @@ done
 # version precedente : l'image du service n'est alors pas celle demandee.
 for s in $SERVICES_APP; do
   image=$(docker service inspect "${STACK}_$s" --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}')
-  case "${image%@*}" in *":$TAG") ;; *) erreur "${STACK}_$s est en ${image%@*} et non en $TAG : mise a jour refusee, retour arriere effectue" ;; esac
+  case "${image%@*}" in *":$TAG") ;; *)
+    echo "ERREUR : ${STACK}_$s est en ${image%@*} et non en $TAG : mise a jour refusee, retour arriere effectue sur ce service." >&2
+    echo "         Les services dont la mise a jour a reussi sont en $TAG. Pour tout remettre dans la meme version : make deploy TAG=${AVANT:-<version precedente>}" >&2
+    exit 1 ;;
+  esac
 done
 
 titre "5. l'edge route les services"
