@@ -57,3 +57,26 @@ version de Grafana : 12.4.12 | base : ok
 
 # pare-feu : les trois ports de collecte sont ouverts vers le noeud de donnees, dans un seul sens
 [worker1] nft : vxlan tcp dport != { 5432, 5672, 8080, 9100, 15672, 15692 }
+
+# make supervision : chaque requete du tableau de bord, rejouee sur 30 minutes comme le fait Grafana
+# releve du 2026-10-06 10:37 UTC, apres plusieurs redeploiements complets
+== requetes du tableau de bord, sur 30 minutes
+   OK      Machines en service                         1 serie(s)
+   OK      Sources joignables                          1 serie(s)
+   OK      Requêtes par seconde                        1 serie(s)
+   OK      Requêtes abouties, 5 min                    1 serie(s)
+   OK      Messages en erreur                          1 serie(s)
+   OK      Workers à l'écoute                          1 serie(s)
+   OK      Requêtes par seconde, par service           3 serie(s)
+   OK      Erreurs par seconde, par service et code    4 serie(s)
+   OK      Durée de réponse, 95e centile               3 serie(s)
+   OK      Instances par service et version            3 serie(s)
+   OK      Mémoire par service                        11 serie(s)
+   OK      Processeur par service                     11 serie(s)
+   OK      Processeur utilisé                          3 serie(s)
+   OK      Mémoire utilisée                            3 serie(s)
+   OK      Disque utilisé                              3 serie(s)
+   OK      Messages en attente, par file               2 serie(s)
+   OK      Consommateurs, par file                     2 serie(s)
+
+aucune requete en erreur

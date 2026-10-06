@@ -118,7 +118,7 @@ dans `docker service inspect`.
 | `nebula_db_init_v1` | `db/init.sql` (schéma, exécuté sur un volume vide) |
 | `nebula_bus_conf_v1` | `config/rabbitmq.conf` |
 | `nebula_prometheus_v1` | `config/prometheus.yml` |
-| `nebula_grafana_source_v1`, `nebula_grafana_tableaux_v1`, `nebula_grafana_tableau_v2` | `config/grafana/` : source de données, chargement et tableau de bord |
+| `nebula_grafana_source_v1`, `nebula_grafana_tableaux_v1`, `nebula_grafana_tableau_v3` | `config/grafana/` : source de données, chargement et tableau de bord |
 
 Une config Swarm est immuable : pour en changer le contenu, changer le
 suffixe de version dans `swarm/stack.nebula.yml`.
@@ -267,6 +267,9 @@ est déployée par `make deploy` après l'application et sans la retarder.
   sources de worker1 (ports 15692, 9100, 8080). Le sens unique est conservé.
 - **Grafana 12 et non 13** : à partir de la 13, la connexion à Prometheus
   n'est plus dans l'image et se télécharge depuis Internet à chaque démarrage.
+
+- **Vérification** : `make supervision` contrôle que chaque source répond et
+  rejoue chaque requête du tableau de bord sur 30 minutes, comme Grafana.
 
 Preuve : [docs/preuves/supervision.txt](docs/preuves/supervision.txt).
 
