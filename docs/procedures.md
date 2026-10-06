@@ -27,7 +27,9 @@ Le cluster est construit ([cluster.md](cluster.md)) et rien n'est déployé.
 ## 3. Retour arrière
 
 Automatique : si une tâche de la nouvelle version n'est pas saine, Swarm
-ramène seul le service à la version précédente. Il n'y a rien à lancer.
+ramène seul ce service à la version précédente. Les autres services, eux,
+sont passés dans la nouvelle : `make deploy TAG=<version précédente>` remet
+tout dans la même version (le script affiche la commande exacte).
 
 1. Constat : `docker service inspect nebula_comptes --format '{{.UpdateStatus.State}} : {{.UpdateStatus.Message}}'`
 2. Cause : `make logs S=comptes`, et `docker service ps nebula_comptes --no-trunc` (colonne ERROR).
@@ -44,7 +46,7 @@ fois : un second appel remettrait la version retirée.
 
 1. poste : `./cluster/90-arret.sh` arrête worker1, worker2, puis le manager.
 2. Proxmox : démarrer les trois machines, le manager en premier.
-3. Attendre deux à trois minutes. Docker démarre avec chaque machine, le Swarm se
+3. Attendre deux à quatre minutes. Docker démarre avec chaque machine, le Swarm se
    reforme, le manager relance les services ; les applications réessaient
    jusqu'à ce que la base et le bus répondent.
 4. `make status` : trois nœuds `Ready`, sept services au complet.

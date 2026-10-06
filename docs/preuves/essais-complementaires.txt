@@ -1,0 +1,244 @@
+# Essais complementaires : lignes retirees pour de vrai, pannes simulees, chemins d'echec
+# releves du 2026-10-06 sur le cluster, pare-feu actif. Apres chaque essai l'etat d'origine est remis
+# (make deploy TAG=v1.0.0).
+
+## A. Ce qui casse quand on retire une ligne ou une protection
+
+### E1. TAG absent : le deploiement est refuse
+invalid interpolation format for services.comptes.image: "required variable TAG is missing a value: TAG requis, exemple v1.0.0"; you may need to escape any $ with another $
+
+### E2. secret externe absent : le deploiement est refuse
+Creating network essai_default
+service x: secret not found: secret_qui_n_existe_pas
+services crees : 0
+
+### E3. config modifiee sans changer son nom : le deploiement est refuse
+failed to update config nebula_bus_conf_v1: Error response from daemon: rpc error: code = InvalidArgument desc = only updates to Labels are allowed
+
+### E4. label du port retire sur comptes : le service n est plus route
+avant  : GET /api/comptes/1 -> HTTP 200
+sans   : GET /api/comptes/1 -> HTTP 404
+sans   : GET /api/comptes/1 -> HTTP 404
+sans   : GET /api/comptes/1 -> HTTP 404
+edge_traefik.2.z2lu95knanpr@manager    | 2026-10-06T07:51:15Z ERR error="service \"comptes\" error: port is missing" container=nebula-comptes-pp1xpha3vbb2tvj2xjqdqg2j1 providerName=swarm
+remis  : GET /api/comptes/1 -> HTTP 200
+
+### E5. middleware api-strip retire : l application recoit /api/comptes/1
+sans   : GET /api/comptes/1 -> HTTP {"error":"not found"} 404
+remis  : GET /api/comptes/1 -> HTTP 200
+
+### E6. internal: true : pas de sortie depuis le reseau interne
+reseau nebula_internal : wget: can't connect to remote host (1.1.1.1): Network is unreachable -> code 1
+reseau par defaut      : code 0 (0 = sortie possible)
+
+### E7. limite memoire : un conteneur qui la depasse est tue
+Failed 2 seconds ago "task: non-zero exit (137)"
+
+### E8. volume monte sur un dossier absent de l image : il appartient a root
+image node (pas de /data)      : touch: /data/x: Permission denied ; proprietaire : root:root
+image worker (/data cree pour node) : ecriture OK ; proprietaire : UNKNOWN:UNKNOWN
+
+### E9. PostgreSQL 18 : emplacement des donnees dans l image
+PGDATA=/var/lib/postgresql/18/docker
+
+### E10. sans --with-registry-auth, un worker ne peut pas tirer l image
+sans le drapeau : Rejected 11 seconds ago | "failed to resolve reference "registry.local:5000/mirror/httpd:2.4-alpine": pull access denied, repository does not exist or may require authorization: authorization failed: 
+avec le drapeau : Preparing 14 seconds ago | 
+
+### E11. sans le script d entree, publications n a pas le mot de passe du bus
+[db] ok (essai 1)
+[cache] ok (essai 1)
+[bus] indisponible 1/30: Handshake terminated by server: 403 (ACCESS-REFUSED) with message "ACCESS_REFUSED - Login was refused using authentication mechanism PLAIN."
+(repete toutes les 2 s ; la tache reste en demarrage)
+
+## B. Le bus
+
+### E12a. redemarrage du bus seul : les applications se reconnectent-elles ?
+avant : "consumers":2,"messages":0,"name":"publications" "consumers":0,"messages":3,"name":"publications.erreurs" 
++5s apres le retour du bus : POST /api/publications -> HTTP 500 ; 
++20s apres le retour du bus : POST /api/publications -> HTTP 500 ; "consumers":0,"messages":0,"name":"publications" "consumers":0,"messages":3,"name":"publications.erreurs" 
++45s apres le retour du bus : POST /api/publications -> HTTP 500 ; "consumers":0,"messages":0,"name":"publications" "consumers":0,"messages":3,"name":"publications.erreurs" 
+taches relancees depuis 2 min :
+
+### E12b. hostname du bus change : le broker repart-il vide ?
+avant : "consumers":0,"messages":0,"name":"publications" "consumers":0,"messages":3,"name":"publications.erreurs" 
+avec hostname bus-essai : "consumers":0,"messages":0,"name":"publications.erreurs" 
+POST /api/publications -> HTTP 500
+dossiers de donnees du bus sur worker1 : rabbit@bus (3 messages en erreur conserves) et rabbit@bus-essai (vide)
+apres remise de hostname: bus -> publications.erreurs retrouve ses 3 messages
+
+Correction : la sonde de publications et de worker-medias verifie aussi la connexion au bus.
+### E12c. redemarrage du bus seul, avec la sonde qui verifie la connexion au bus
+avant : POST=201 GET=200 consommateurs=2
++  0s  POST=201 GET=200 bus=1/1 publications=3/3 worker=2/2
++  4s  POST=500 GET=200 bus=1/1 publications=3/3 worker=2/2
++  7s  POST=500 GET=200 bus=0/1 publications=3/3 worker=2/2
++ 17s  POST=500 GET=200 bus=1/1 publications=3/3 worker=2/2
++ 20s  POST=500 GET=200 bus=1/1 publications=3/3 worker=0/2
++ 41s  POST=504 GET=504 bus=1/1 publications=0/3 worker=2/2
++ 44s  POST=404 GET=404 bus=1/1 publications=3/3 worker=2/2
++ 47s  POST=201 GET=200 bus=1/1 publications=3/3 worker=2/2
+apres : POST=201 consommateurs=2 ; duree totale 61 s
+taches remplacees :
+nebula_publications.1 | Shutdown 2 minutes ago | 
+nebula_publications.2 | Shutdown about a minute ago | 
+nebula_publications.3 | Shutdown about a minute ago | 
+nebula_worker-medias.1 | Shutdown 2 minutes ago | 
+nebula_worker-medias.2 | Shutdown 2 minutes ago | 
+
+## C. Placement de la base, politique d'echec
+
+### E13. contrainte de placement de la base : que se passe-t-il si elle demarre ailleurs ?
+avant, base sur worker1 : {"id":10,"pseudo":"smoke-1791208065-8891","cree_le":"2026-10-05T13:47:45.902Z"} HTTP 200
+base sur worker2 : {"error":"inconnu"} HTTP 404
+fil : {"source":"db","items":[]}
+contrainte remise, base sur worker1 : {"id":10,"pseudo":"smoke-1791208065-8891","cree_le":"2026-10-05T13:47:45.902Z"} HTTP 200
+
+### E14. failure_action: pause au lieu de rollback, avec une version defectueuse
++  0s  updating
++ 53s  paused
+message : update paused due to failure or early termination of task 7p46u0rbda0pps4q1ku6wzff9
+image du service : registry.local:5000/nebula-comptes:v1.0.0-defaut-sonde
+taches :
+nebula_comptes.1 nebula-comptes:v1.0.0 Running Running 44 minutes ago
+nebula_comptes.1 nebula-comptes:v1.2.0 Shutdown Shutdown 43 minutes ago
+nebula_comptes.1 nebula-comptes:v1.0.0 Shutdown Shutdown 46 minutes ago
+nebula_comptes.1 nebula-comptes:v1.1.0 Shutdown Shutdown about an hour ago
+nebula_comptes.1 nebula-comptes:v1.1.0 Shutdown Failed about an hour ago
+nebula_comptes.2 nebula-comptes:v1.0.0 Running Running 43 minutes ago
+le service repond encore : 200 200 200 200 
+20 s plus tard, toujours : paused
+retour arriere a la main : docker service rollback nebula_comptes
+   rollback_completed, image registry.local:5000/nebula-comptes:v1.0.0
+
+## D. Arret differe et rejeu, sous charge (une tache remplacee a la fois, toutes remplacees)
+# a 12 requetes par seconde
+
+### E15a. reference : arret differe de 10 s et rejeu actifs
+       854 200 v1.0.0
+   bilan : 854 requetes abouties sur 854, 0 en echec
+
+### E15b. sans arret differe (DRAIN_SECONDS=0), rejeu actif
+       875 200 v1.0.0
+   bilan : 875 requetes abouties sur 875, 0 en echec
+
+### E15c. sans arret differe et sans rejeu
+       883 200 v1.0.0
+   bilan : 883 requetes abouties sur 883, 0 en echec
+
+### E15d. arret differe de 10 s, sans rejeu
+       870 200 v1.0.0
+   bilan : 870 requetes abouties sur 870, 0 en echec
+
+# a 49 requetes par seconde (10 flux en parallele)
+
+### E16a. charge x10, arret differe et rejeu actifs
+   HTTP 200 : 3677
+   total : 3677 abouties sur 3677, 0 en echec (environ 49 requetes par seconde)
+
+### E16b. charge x10, sans arret differe et sans rejeu
+   HTTP 200 : 3722
+   HTTP 504 : 6
+   total : 3722 abouties sur 3728, 6 en echec (environ 49 requetes par seconde)
+
+### E16c. charge x10, sans arret differe, rejeu actif
+   HTTP 000 : 1
+   HTTP 200 : 3701
+   HTTP 502 : 1
+   HTTP 504 : 2
+   total : 3701 abouties sur 3705, 4 en echec (environ 49 requetes par seconde)
+
+
+## E. Machines absentes plusieurs minutes (Docker arrete, relance programmee)
+### R1. worker1 (donnees) absent 4 minutes : Docker arrete, relance programmee
+Docker arrete sur worker1 a 08:19:17
++  1s  worker1=Ready bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 GET_fil=200 sante_comptes=200 POST=400
++  6s  worker1=Ready bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 GET_fil=500 sante_comptes=200 POST=400
++ 11s  worker1=Down bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 GET_fil=500 sante_comptes=200 POST=400
++ 16s  worker1=Down bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=0/2 GET_fil=500 sante_comptes=200 POST=400
++ 29s  worker1=Down bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=0/2 GET_fil=000 sante_comptes=200 POST=000
++ 34s  worker1=Down bus=1/1 comptes=3/3 db=1/1 publications=0/3 worker-medias=0/2 GET_fil=404 sante_comptes=200 POST=404
++241s  worker1=Ready bus=1/1 comptes=3/3 db=1/1 publications=0/3 worker-medias=0/2 GET_fil=404 sante_comptes=200 POST=404
++246s  worker1=Ready bus=0/1 comptes=3/3 db=0/1 publications=0/3 worker-medias=0/2 GET_fil=404 sante_comptes=200 POST=404
++251s  worker1=Ready bus=0/1 comptes=3/3 db=1/1 publications=0/3 worker-medias=0/2 GET_fil=404 sante_comptes=200 POST=404
++256s  worker1=Ready bus=1/1 comptes=3/3 db=1/1 publications=0/3 worker-medias=0/2 GET_fil=404 sante_comptes=200 POST=404
++262s  worker1=Ready bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=1/2 GET_fil=404 sante_comptes=200 POST=404
++267s  worker1=Ready bus=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 GET_fil=200 sante_comptes=200 POST=201
+retour complet a +267 s (Docker relance sur worker1 a +240 s)
+8 controles OK (make smoke)
+   "consumers":2,"messages":0,"name":"publications"
+   "consumers":0,"messages":3,"name":"publications.erreurs"
+
+### R2. manager absent 3 minutes : Docker arrete, relance programmee
+avant : 3 conteneurs sur worker2, port 80 de worker2 -> HTTP 200
+Docker arrete sur le manager a 08:24:28
++  3s  worker2: 3 conteneurs, port80=000 | manager: fil=000
++181s  worker2: 3 conteneurs, port80=000 | manager: manager=Ready worker1=Unknown worker2=Unknown traefik=1/2 bus=1/1 cache=0/1 comptes=3/3 db=1/1 publications=2/3 worker-medias=1/2 fil=000
++187s  worker2: 3 conteneurs, port80=000 | manager: manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=1/1 cache=0/1 comptes=2/3 db=1/1 publications=0/3 worker-medias=1/2 fil=000
++194s  worker2: 5 conteneurs, port80=000 | manager: manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=1/1 cache=0/1 comptes=2/3 db=1/1 publications=0/3 worker-medias=1/2 fil=000
++206s  worker2: 5 conteneurs, port80=404 | manager: manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 fil=200
+retour complet a +206 s (Docker relance sur le manager a +180 s)
+8 controles OK (make smoke)
+nebula-infra-registry-1 Up 32 seconds;nebula-infra-portainer-1 Up 32 seconds;
+active
+
+## F. Exercice de retour arriere, mode crash
+### D1. make drill M=crash (image qui s'arrete des le demarrage)
+== 1. version en place : registry.local:5000/nebula-comptes:v1.0.0
+   version defectueuse publiee : registry.local:5000/nebula-comptes:v1.0.0-defaut-crash
+== 2. mise a jour vers la version defectueuse (requetes en continu en parallele)
+   +  1s  updating
+   + 12s  rollback_started
+   + 17s  rollback_completed
+   nebula_comptes.2	registry.local:5000/nebula-comptes:v1.0.0-defaut-crash	manager	Failed 6 seconds ago	"task: non-zero exit (1)"
+   message : rollback completed
+   image du service : registry.local:5000/nebula-comptes:v1.0.0@sha256:85980af6744a702adfba8c13964673748c55e77876eb297760a644e926850c8d
+   etat final : rollback_completed, 17 s entre la mise a jour et la fin du retour arriere
+-- par code HTTP et version
+bilan : 193 requetes abouties sur 193, 0 en echec
+
+## G. Script de demonstration : scenario 9 complet, puis scenario 2
+━━ 9. Panne du plan de donnees ━━
+Ou le voir     : Cluster visualizer : nebula_db disparait de worker1 puis revient.  Terminal : HTTP 500 puis le compte.
+nebula_db scaled to 0
+curl /api/comptes/1 -> HTTP 500
+nebula_db scaled to 1
+{"id":1,"pseudo":"ada","cree_le":"2026-10-05T13:02:39.227Z"}
+== sauvegarde de la base vers /srv/nebula/backups/nebula-20261006T083001Z.dump
+[worker1] $ docker rm ... ; docker volume rm nebula_db_data
+nebula_db scaled to 0
+nebula_db_data
+nebula_db scaled to 1
+fil, base neuve : {"source":"db","items":[]}
+== restauration de /srv/nebula/backups/nebula-20261006T083001Z.dump
+   comptes : 32
+   publications : 50
+fil, apres restauration : {"source":"db","items":[{"id":50,"auteur_id":32,"titre":"smoke","cree_le":"2026-10-06T08:27:55.589Z"},{"id":49,"auteur_id":31,"titre":"smoke","c
+
+### D3. script de demonstration, scenario 2 (redemarrage des trois machines), pare-feu actif
+━━ 2. Arret puis redemarrage complet du cluster ━━
+fil avant : {"source":"cache","items":[{"id":50,"auteur_id":32,"titre":"smoke","cree_le":"2026-10-06T0
+== reboot de worker1
+== reboot de worker2
+== reboot de manager
++ 17s  manager injoignable
++119s  manager=Ready worker1=Ready worker2=Ready traefik=1/2 bus=1/1 cache=0/1 comptes=0/3 db=1/1 publications=1/3 worker-medias=1/2 fil=000
++124s  manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=0/1 cache=0/1 comptes=0/3 db=0/1 publications=0/3 worker-medias=0/2 fil=000
++156s  manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=0/1 cache=1/1 comptes=0/3 db=0/1 publications=0/3 worker-medias=0/2 fil=000
++161s  manager=Ready worker1=Ready worker2=Ready traefik=0/2 bus=0/1 cache=1/1 comptes=0/3 db=1/1 publications=0/3 worker-medias=0/2 fil=000
++176s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=1/3 db=1/1 publications=0/3 worker-medias=0/2 fil=404
++189s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=1/3 db=1/1 publications=1/3 worker-medias=0/2 fil=404
++193s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=1/3 db=1/1 publications=1/3 worker-medias=1/2 fil=404
++198s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=1/3 db=1/1 publications=1/3 worker-medias=1/2 fil=200
++202s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=1/3 db=1/1 publications=3/3 worker-medias=2/2 fil=200
++226s  manager=Ready worker1=Ready worker2=Ready traefik=2/2 bus=1/1 cache=1/1 comptes=3/3 db=1/1 publications=3/3 worker-medias=2/2 fil=200
+   service revenu en 226 s
+   fil apres : {"source":"cache","items":[{"id":50,"auteur_id":32,"titre":"smoke","cree_le":"2026-10-06T0
+  sante de comptes                              OK
+  sante de publications                         OK
+  creation d'un compte (id=33)                  OK
+  lecture du compte                             OK
+  publication, auteur verifie (id=51)           OK
+  auteur inconnu refuse (HTTP 400)              OK
+  fil : 1re lecture depuis la base (db)         OK
+  fil : 2e lecture depuis le cache (cache)      OK

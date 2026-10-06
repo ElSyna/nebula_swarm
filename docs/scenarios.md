@@ -10,7 +10,7 @@ Sauf mention contraire, les commandes se lancent sur le manager, dans
 | # | Scénario | Commandes | Résultat relevé |
 |---|---|---|---|
 | 1 | Un seul cluster | `docker node ls` | 3 nœuds `Ready` / `Active`, `manager` est `Leader` |
-| 2 | Arrêt et redémarrage complet | poste : `./cluster/90-arret.sh` | service revenu seul en 116 s, 176 s et 149 s (trois essais), données intactes |
+| 2 | Arrêt et redémarrage complet | poste : `./cluster/90-arret.sh` | service revenu seul en 116 s, 176 s, 149 s et 226 s (quatre essais), données intactes |
 | 3 | Déploiement depuis zéro | `make destroy`, `make deploy TAG=v1.0.0` | 20 s + 35 s |
 | 4 | Exposition | `make exposition` ; poste : `./cluster/25-parefeu.sh verif` | port 80 seul publié ; 24 ouvertures et refus conformes à la matrice de flux |
 | 5 | Placement | `make status` | db et bus sur worker1, sans état sur manager et worker2 |
@@ -38,7 +38,7 @@ contient aussi le test du réseau entre machines.
 # poste
 ./cluster/90-arret.sh          # worker1, worker2, puis manager
 # Proxmox : démarrer les trois machines, le manager en premier
-# manager, après deux à trois minutes
+# manager, après deux à quatre minutes
 make status
 make smoke
 ```
@@ -183,17 +183,26 @@ autre fichier n'est modifié. Le service est routé sur `/whoami` par ses
 labels. Dans l'état du cluster affiché en fin de commande, les sept autres
 services gardent leur ancienneté (`Running ... minutes ago`).
 
-Pour une image qui n'est pas encore dans le registry : ajouter une ligne à
-`infra/images.txt`, puis `./infra/mirror.sh`. Pour un service qui a besoin
+L'image peut être donnée sous son nom public (`IMAGE=nginx:1.29-alpine`) :
+elle est d'abord copiée dans le registry privé, les nœuds n'ayant pas accès
+aux registries publics. Relevé avec nginx : 28 s, copie comprise. Pour un service qui a besoin
 de la base, du bus ou du cache : ajouter `internal` à `networks` et la liste
 `secrets` dans le fichier créé (voir les commentaires du gabarit).
 
 Retrait : `rm swarm/services/whoami.yml && make deploy`.
 
+Le fichier créé est sur le manager. Pour le garder : `git add -A && git
+commit` sur le manager, puis sur le poste `git pull cluster main && git push
+origin main`.
+
 Preuve : [scenario-10-ajout-service.txt](preuves/scenario-10-ajout-service.txt).
 
 ## Autres relevés
 
+- [essais-complementaires.txt](preuves/essais-complementaires.txt) : seize
+  lignes ou protections retirées pour de vrai, redémarrage du bus seul, nœud
+  de données puis manager absents plusieurs minutes, exercice de retour
+  arrière en mode arrêt immédiat.
 - [livraison-github-actions.txt](preuves/livraison-github-actions.txt) :
   exécutions GitHub Actions de la CI (tag `v1.2.0`) et du CD.
 - [livraison-construction.txt](preuves/livraison-construction.txt) :

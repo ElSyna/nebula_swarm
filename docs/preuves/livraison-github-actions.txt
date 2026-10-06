@@ -81,3 +81,34 @@ job deployer completed success manager 2026-10-06T07:16:19Z 2026-10-06T07:17:39Z
 ***_comptes         replicated   3/3        registry.local:5000/***-comptes:v1.2.0                 
 ***_publications    replicated   3/3        registry.local:5000/***-publications:v1.2.0            
 ***_worker-medias   replicated   2/2        registry.local:5000/***-worker-medias:v1.2.0           
+
+## CD avec une version defectueuse : le deploiement est refuse, le job echoue
+# tag git et images "essai-version-defectueuse" : comptes y repond 500 sur /health, les deux autres services sont identiques a v1.0.0
+https://github.com/ElSyna/nebula_swarm/actions/runs/37438331121
+job deployer completed failure manager 2026-10-06T08:46:18Z 2026-10-06T08:47:56Z https://github.com/ElSyna/nebula_swarm/actions/runs/37438331121/job/112185576531
+    2 Run actions/checkout@v4 success
+    3 Connexion au registry success
+    4 Deployer failure
+    5 Verifier la chaine applicative skipped
+    6 Etat du cluster success
+    7 Effacer les identifiants success
+
+# extrait du journal de l'etape "Deployer", puis de l'etape "Etat du cluster"
+== 1. prerequis
+   secrets, etiquettes et images essai-version-defectueuse presents
+== 2. edge
+== 3. *** (essai-version-defectueuse)
+== 4. convergence
+   +  3s  en cours : ***_comptes:updating ***_publications:updating ***_worker-medias:updating 
+   + 46s  en cours : ***_comptes:updating ***_publications:updating 
+   + 64s  en cours : ***_comptes:rollback_started ***_publications:updating 
+   + 70s  en cours : ***_publications:updating 
+   + 72s  tous les services sont a leur nombre d instances
+ERREUR : ***_comptes est en registry.local:5000/***-comptes:v1.0.0 et non en essai-version-defectueuse : mise a jour refusee, retour arriere effectue
+##[error]Process completed with exit code 1.
+***_comptes         replicated   3/3        registry.local:5000/***-comptes:v1.0.0                            
+***_publications    replicated   3/3        registry.local:5000/***-publications:essai-version-defectueuse    
+***_worker-medias   replicated   2/2        registry.local:5000/***-worker-medias:essai-version-defectueuse   
+
+# Le service comptes n'a pas cesse de repondre : ses anciennes taches n'ont pas ete arretees.
+# Remise en etat : make deploy TAG=v1.0.0

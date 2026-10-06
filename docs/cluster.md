@@ -194,7 +194,8 @@ Preuve : [preuves/pare-feu-matrice-de-flux.txt](preuves/pare-feu-matrice-de-flux
   publique du réseau est partagée : le quota était à zéro pendant la
   construction. Les images officielles sont prises sur le miroir public
   `public.ecr.aws/docker/library`. Une fois copiées, le cluster ne dépend
-  plus d'aucun registry public.
+  plus d'aucun registry public. Une image de plus : `make image
+  I=nginx:1.29-alpine` sur le manager, qui l'ajoute aussi à la liste.
 - **Portainer** : même fichier Compose, écoute sur `127.0.0.1:9000` du
   manager uniquement. Accès : `ssh -L 9000:127.0.0.1:9000 manager`, puis
   `http://localhost:9000`, compte `admin`.

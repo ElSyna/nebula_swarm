@@ -40,7 +40,10 @@ cache et le bus.
 
 Fichiers : [swarm/stack.edge.yml](swarm/stack.edge.yml) et
 [swarm/stack.nebula.yml](swarm/stack.nebula.yml). Chaque service a une sonde
-de santé, des limites de ressources et une politique de redémarrage.
+de santé, des limites de ressources et une politique de redémarrage. La
+sonde de `publications` et de `worker-medias` vérifie aussi leur connexion au
+bus : ces applications ne se reconnectent pas seules, la sonde les fait
+remplacer quand le bus a redémarré.
 
 ### Technologies au choix
 
@@ -133,11 +136,18 @@ stack) :
 Côté edge : sonde active de chaque tâche toutes les 3 s et rejeu d'une
 requête sur une autre tâche si la première ne répond pas.
 
-Mesures relevées ([docs/scenarios.md](docs/scenarios.md)) : mise à jour des
-trois services en 66 s, 1192 requêtes sur 1192 abouties pendant la mise à
-jour ; version défectueuse détectée et retirée en 55 s, sans requête en
-échec. `db` et `bus` sont mis à jour en `stop-first` : un seul processus à
-la fois sur leur volume.
+Mesures relevées ([docs/scenarios.md](docs/scenarios.md),
+[essais complémentaires](docs/preuves/essais-complementaires.txt)) :
+
+- mise à jour des trois services en 66 s, 1192 requêtes sur 1192 abouties ;
+- version défectueuse retirée en 55 s quand sa sonde échoue, en 17 s quand
+  elle s'arrête dès le démarrage, sans requête en échec ;
+- à 49 requêtes par seconde, le remplacement de toutes les tâches fait
+  échouer 4 à 6 requêtes sur 3 700 sans l'arrêt différé, aucune avec. À 12
+  requêtes par seconde, aucune différence mesurable.
+
+`db` et `bus` sont mis à jour en `stop-first` : un seul processus à la fois
+sur leur volume.
 
 ## Versions et traçabilité
 
@@ -208,6 +218,7 @@ Sur le manager, dans `~/nebula`. `make help` liste les commandes.
 | Messages en attente et en erreur sur le bus | `make bus` |
 | Ports qui répondent sur chaque nœud | `make exposition` |
 | Ajouter un service | `make service NOM=... IMAGE=... PORT=...` |
+| Copier une image publique dans le registry | `make image I=nginx:1.29-alpine` |
 | Indicateurs (requêtes et codes par service) | `curl -u admin http://<nœud>/metrics` (mot de passe demandé) |
 
 **Messages en erreur.** Un message que le worker rejette est renvoyé par
@@ -219,7 +230,8 @@ bus` affiche le nombre de messages de chaque file.
 [swarm/services/_gabarit.yml](swarm/services/_gabarit.yml) et redéploie.
 Les fichiers de ce dossier sont fusionnés avec la stack : les réseaux et les
 secrets sont déjà déclarés, les sept autres services ne sont pas redémarrés,
-l'edge n'est pas modifié.
+l'edge n'est pas modifié. L'image peut être donnée sous son nom public :
+elle est d'abord copiée dans le registry privé.
 
 ## Hypothèses et limites
 
@@ -247,6 +259,12 @@ l'edge n'est pas modifié.
 - **Mot de passe de la base** : PostgreSQL le fixe à l'initialisation du
   volume. Recréer le secret `nebula_db_password` sans recréer le volume
   empêche les applications de se connecter.
+- **Redémarrage du bus seul** : `publications` et `worker-medias` sont
+  remplacés par leur sonde. Lectures et écritures des publications sont
+  indisponibles quelques secondes ; retour à la normale relevé en 47 s.
+- **Mise à jour refusée pour un service** : les services dont la mise à jour
+  a réussi restent dans la nouvelle version. `make deploy TAG=<précédente>`
+  remet tout dans la même version ; le script l'indique.
 - **Après un redémarrage complet**, les instances d'un service sans état
   peuvent se retrouver sur un seul nœud : `make rebalance` les répartit.
 - **`docker service rollback`** échange la version courante et la
