@@ -10,9 +10,9 @@ Sauf mention contraire, les commandes se lancent sur le manager, dans
 | # | Scénario | Commandes | Résultat relevé |
 |---|---|---|---|
 | 1 | Un seul cluster | `docker node ls` | 3 nœuds `Ready` / `Active`, `manager` est `Leader` |
-| 2 | Arrêt et redémarrage complet | poste : `./cluster/90-arret.sh` | service revenu seul en 116 s et 176 s (deux essais), données intactes |
+| 2 | Arrêt et redémarrage complet | poste : `./cluster/90-arret.sh` | service revenu seul en 116 s, 176 s et 149 s (trois essais), données intactes |
 | 3 | Déploiement depuis zéro | `make destroy`, `make deploy TAG=v1.0.0` | 20 s + 35 s |
-| 4 | Exposition | `make exposition` | port 80 seul publié ; base, bus, cache fermés |
+| 4 | Exposition | `make exposition` ; poste : `./cluster/25-parefeu.sh verif` | port 80 seul publié ; 24 ouvertures et refus conformes à la matrice de flux |
 | 5 | Placement | `make status` | db et bus sur worker1, sans état sur manager et worker2 |
 | 6 | Montée en charge | `make scale S=comptes N=6` | 6 instances sur 2 nœuds, toutes servent du trafic |
 | 7 | Mise à jour sans interruption | `make deploy TAG=v1.1.0` | 1192 requêtes sur 1192 abouties, en 66 s |
@@ -55,7 +55,8 @@ Si `make status` montre toutes les instances d'un service sur un seul nœud :
 
 Preuve : [scenario-02-redemarrage.txt](preuves/scenario-02-redemarrage.txt).
 Le relevé a été fait avec `./cluster/90-arret.sh reboot` (redémarrage des
-trois machines dans le même ordre, sans passer par Proxmox).
+trois machines dans le même ordre, sans passer par Proxmox), pare-feu actif :
+il revient avec chaque machine.
 
 ## 3. Déploiement depuis zéro
 
@@ -74,14 +75,23 @@ Preuve : [scenario-03-deploiement.txt](preuves/scenario-03-deploiement.txt).
 
 ```bash
 make exposition
+# poste
+./cluster/25-parefeu.sh verif
 ```
 
-Première partie : seul `edge_traefik` a une valeur dans la colonne PORTS
-(`*:80->80/tcp`). Seconde partie : sur chaque nœud, 80 est `OUVERT` ; 5432
-(base), 5672 et 15672 (bus), 6379 (cache), 3000 (applications), 8080 et 9000
-sont `ferme`. 5000 répond sur le manager : c'est le registry, hors cluster.
+`make exposition` : seul `edge_traefik` a une valeur dans la colonne PORTS
+(`*:80->80/tcp`). Sur manager et worker2, 80 est `OUVERT` ; 5432 (base), 5672
+et 15672 (bus), 6379 (cache), 3000 (applications), 8080 et 9000 sont `ferme`
+partout. worker1 ne répond sur aucun de ces ports.
 
-Preuve : [scenario-04-exposition.txt](preuves/scenario-04-exposition.txt).
+`25-parefeu.sh verif` regarde depuis l'extérieur (le routeur) : seuls 22 et
+80 répondent ; 2377, 5000 et 7946 sont fermés. Il contrôle ensuite le sens
+des ouvertures entre machines, puis dans le réseau interne : un conteneur
+de worker2 joint la base, un conteneur de worker1 ne joint ni `comptes` ni
+le cache.
+
+Preuves : [scenario-04-exposition.txt](preuves/scenario-04-exposition.txt),
+[pare-feu-matrice-de-flux.txt](preuves/pare-feu-matrice-de-flux.txt).
 
 ## 5. Placement cohérent
 

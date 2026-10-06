@@ -8,9 +8,10 @@ création des machines (sur l'hôte Proxmox).
 | 1. Créer les trois machines | `cluster/00-vm-proxmox.sh` (hôte Proxmox) |
 | 2. Installer Docker | `./cluster/10-docker.sh` |
 | 3. Former le Swarm, étiqueter, tester le réseau | `./cluster/20-swarm.sh` |
-| 4. Déposer le dépôt sur le manager | `./cluster/30-depot.sh` |
-| 5. Registry, images tierces, Portainer | `./cluster/40-infra.sh` |
-| 6. Runner de livraison | `./cluster/50-runner.sh` |
+| 4. Poser le pare-feu | `./cluster/25-parefeu.sh` |
+| 5. Déposer le dépôt sur le manager | `./cluster/30-depot.sh` |
+| 6. Registry, images tierces, Portainer | `./cluster/40-infra.sh` |
+| 7. Runner de livraison | `./cluster/50-runner.sh` |
 
 Les scripts 10 à 40 sont rejouables : ce qui est déjà en place n'est pas modifié.
 Le cluster est ensuite prêt pour le déploiement initial ([procedures.md](procedures.md)).
@@ -80,7 +81,8 @@ quand les machines se rallument.
    bloqué, les services démarrent mais ne se voient pas.
 
 Ports utilisés entre les nœuds : 2377/tcp (administration), 7946/tcp et udp
-(découverte), 4789/udp (réseau applicatif).
+(découverte), 4789/udp (réseau applicatif). Ce sont les seuls ouverts entre
+les machines, avec le registry : voir la matrice de flux, section 4.
 
 Preuve : [preuves/scenario-01-cluster.txt](preuves/scenario-01-cluster.txt).
 
@@ -122,7 +124,55 @@ contrainte garantit qu'elle y revient toujours. worker1 ne porte rien
 d'autre que les données. Les services sans état sont sur les deux autres
 machines : la perte de l'une des deux les laisse disponibles sur l'autre.
 
-## 4. Registry, images tierces, Portainer
+## 4. Pare-feu et matrice de flux
+
+`cluster/25-parefeu.sh` pose sur chaque machine une table nftables
+`inet nebula`. Tout ce qui entre est refusé par défaut ; seules les
+ouvertures ci-dessous existent, et chacune a un sens : la source peut ouvrir
+une connexion vers la destination, pas l'inverse.
+
+| Source | Destination | Port | Usage | Sens inverse |
+|---|---|---|---|---|
+| routeur 10.96.253.254 | les trois machines | 22/tcp | SSH d'administration | refusé, y compris d'une machine à l'autre |
+| tout client | manager, worker2 | 80/tcp | edge | fermé sur worker1 |
+| worker1, worker2 | manager | 2377/tcp | administration du Swarm | refusé |
+| worker1, worker2 | manager | 5000/tcp | registry | refusé |
+| chaque nœud | chaque nœud | 7946/tcp et udp | découverte entre nœuds | symétrique |
+| chaque nœud | chaque nœud | 4789/udp | transport du réseau overlay | symétrique, filtré à l'intérieur : lignes suivantes |
+| conteneurs de manager et worker2 | conteneurs de worker1 | TCP 5432, 5672, 15672, dans l'overlay | base et bus | refusé : worker1 n'ouvre aucune connexion TCP vers les nœuds applicatifs |
+| conteneurs de manager | conteneurs de worker2 | TCP, dans l'overlay | services sans état entre eux, edge vers les services | autorisé (même niveau) |
+
+- **Le sens dans le réseau overlay.** Le transport VXLAN (4789/udp) circule
+  forcément dans les deux sens. La règle regarde donc dans le paquet
+  encapsulé (`vxlan tcp flags`) et refuse le premier paquet d'une connexion,
+  un SYN sans ACK, quand il vient du mauvais côté. Les réponses passent. Les
+  nœuds applicatifs lisent la base et le bus ; le nœud de données ne peut
+  ouvrir aucune connexion vers eux.
+- **Ports publiés par Docker** (80, 5000). Docker les redirige vers ses
+  conteneurs avant la chaîne `input`. Ils sont filtrés dans une chaîne
+  `prerouting`, placée avant cette redirection.
+- **Table à part.** Les tables que Docker gère lui-même ne sont pas
+  modifiées. Le service `nebula-parefeu` charge `/etc/nebula/parefeu.nft` au
+  démarrage, avant Docker.
+- **Pose sans se couper l'accès.** Avant de charger les règles, le script
+  programme leur retrait dans trois minutes. Il n'annule ce retrait, et ne
+  rend les règles durables, qu'après avoir réussi une nouvelle connexion SSH.
+- **Vérification.** `./cluster/25-parefeu.sh verif` contrôle 24 ouvertures
+  et refus : depuis le routeur, d'une machine à l'autre, et depuis des
+  conteneurs du réseau interne. `./cluster/25-parefeu.sh regles` affiche les
+  règles de chaque nœud, `off` retire le pare-feu.
+
+Limites : la sortie des machines n'est pas filtrée ; dans l'overlay, le sens
+n'est contrôlé que pour TCP. Un service ajouté sur le nœud de données et
+écoutant sur un autre port demande d'ajouter ce port à `PORTS_DATA` dans
+`cluster/nodes.env`, puis de relancer le script.
+
+Le test du réseau de `20-swarm.sh` (étape 3) ouvre des connexions dans tous
+les sens : il se joue avant la pose du pare-feu, et il est ignoré ensuite.
+
+Preuve : [preuves/pare-feu-matrice-de-flux.txt](preuves/pare-feu-matrice-de-flux.txt).
+
+## 5. Registry, images tierces, Portainer
 
 `cluster/40-infra.sh` exécute sur le manager `infra/up.sh` puis
 `infra/mirror.sh`, et déclare le registry sur les workers.
@@ -160,7 +210,7 @@ Ce qui n'est pas dans le dépôt, et où cela se trouve sur le manager :
 
 Preuve : [preuves/registry.txt](preuves/registry.txt).
 
-## 5. Runner de livraison
+## 6. Runner de livraison
 
 Le registry et le manager sont sur un réseau privé : un runner hébergé par
 GitHub ne peut pas les joindre. `cluster/50-runner.sh` installe le runner

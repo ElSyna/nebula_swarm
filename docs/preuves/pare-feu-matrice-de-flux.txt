@@ -1,0 +1,42 @@
+# Pare-feu : verification de la matrice de flux, apres redemarrage des trois machines
+# releve du 2026-10-06 06:49 UTC, depuis le poste d'administration
+
+[poste] $ ./cluster/25-parefeu.sh verif
+== 1. depuis l'exterieur du cluster (le routeur 10.96.253.254)
+   routeur -> manager : 22 (SSH)                              ouvert  OK
+   routeur -> manager : 80 (edge)                             ouvert  OK
+   routeur -> manager : 7946 (decouverte)                     ferme   OK
+   routeur -> worker1 : 22 (SSH)                              ouvert  OK
+   routeur -> worker1 : 80 (edge)                             ferme   OK
+   routeur -> worker1 : 7946 (decouverte)                     ferme   OK
+   routeur -> worker2 : 22 (SSH)                              ouvert  OK
+   routeur -> worker2 : 80 (edge)                             ouvert  OK
+   routeur -> worker2 : 7946 (decouverte)                     ferme   OK
+   routeur -> manager : 2377 (administration du Swarm)        ferme   OK
+   routeur -> manager : 5000 (registry)                       ferme   OK
+== 2. entre les machines : un sens, pas l'autre
+   worker1 -> manager : 2377 (administration du Swarm)        ouvert  OK
+   worker1 -> manager : 5000 (registry)                       ouvert  OK
+   manager -> worker1 : 22 (SSH)                              ferme   OK
+   worker2 -> manager : 2377 (administration du Swarm)        ouvert  OK
+   worker2 -> manager : 5000 (registry)                       ouvert  OK
+   manager -> worker2 : 22 (SSH)                              ferme   OK
+   worker2 -> worker1 : 7946 (decouverte)                     ouvert  OK
+   worker1 -> worker2 : 7946 (decouverte)                     ouvert  OK
+== 3. dans le reseau overlay : applicatif -> donnees, jamais l'inverse
+   conteneur sur worker2 -> db : 5432                         ouvert  OK
+   conteneur sur worker2 -> bus : 5672                        ouvert  OK
+   conteneur sur worker2 -> bus : 4369 (port non prevu)       ferme   OK
+   conteneur sur worker1 -> comptes : 3000                    ferme   OK
+   conteneur sur worker1 -> cache : 6379                      ferme   OK
+== 4. paquets refuses, par regle
+   manager : 5 paquets, registry : reserve aux noeuds du cluster
+   manager : 6 paquets, le noeud de donnees n'ouvre aucune connexion vers les noeuds applicatifs
+   manager : 57 paquets, refuse par defaut
+   worker1 : 5 paquets, le noeud de donnees ne sert pas le trafic public
+   worker1 : 3 paquets, les noeuds applicatifs n'ouvrent que vers la base et le bus
+   worker1 : 43 paquets, refuse par defaut
+   worker2 : 0 paquets, le noeud de donnees n'ouvre aucune connexion vers les noeuds applicatifs
+   worker2 : 49 paquets, refuse par defaut
+
+aucun ecart avec la matrice de flux

@@ -7,7 +7,7 @@ adaptés : image de base paramétrable, dossier des traces du worker.
 
 | Document | Contenu |
 |---|---|
-| [docs/cluster.md](docs/cluster.md) | Recréer les trois machines et le cluster depuis zéro, topologie justifiée |
+| [docs/cluster.md](docs/cluster.md) | Recréer les trois machines et le cluster depuis zéro, topologie justifiée, pare-feu et matrice de flux |
 | [docs/procedures.md](docs/procedures.md) | Les cinq procédures d'exploitation |
 | [docs/scenarios.md](docs/scenarios.md) | Les dix scénarios de vérification : commandes et preuves |
 | [docs/preuves/](docs/preuves/) | Sorties de commandes relevées sur le cluster |
@@ -70,16 +70,23 @@ de santé du conteneur.
 
 ## Réseaux et exposition
 
-- **Un seul port publié par le cluster : 80** (edge, mode ingress : il
-  répond sur les trois nœuds).
+- **Un seul port publié par le cluster : 80** (edge, mode ingress). Il
+  répond sur manager et worker2 ; le pare-feu le ferme sur worker1, qui ne
+  porte que les données.
 - `nebula_internal` est déclaré `internal: true` : pas de sortie vers
   l'extérieur, aucun port publiable. `db`, `bus`, `cache` et `worker-medias`
   ne sont que sur ce réseau.
+- **Pare-feu sur chaque machine** : tout est refusé par défaut, et chaque
+  ouverture a un sens. Les workers joignent le manager (2377, 5000), pas
+  l'inverse. Les nœuds applicatifs ouvrent des connexions vers la base et le
+  bus ; le nœud de données n'en ouvre aucune vers eux. Matrice de flux
+  complète dans [docs/cluster.md](docs/cluster.md).
 - **Portainer** (outil d'administration) n'est pas un service du cluster. Il
   écoute sur `127.0.0.1:9000` du manager : accès par tunnel SSH
   (`ssh -L 9000:127.0.0.1:9000 manager`), puis mot de passe.
-- **Registry** : port 5000 du manager, hors cluster, TLS et authentification.
-  Les workers doivent pouvoir y tirer les images.
+- **Registry** : port 5000 du manager, hors cluster, TLS et authentification,
+  joignable par les trois nœuds seulement.
+- **SSH** : depuis le routeur du réseau uniquement.
 
 ## Secrets et configurations
 
@@ -218,8 +225,8 @@ l'edge n'est pas modifié.
 - **Traces du worker** : volume local, un par nœud. Les traces sont réparties
   sur les nœuds `tier=app`.
 - **Pas de chiffrement du point d'entrée** : HTTP sur le port 80.
-- **Le port 5000 du manager répond** (registry), protégé par TLS et mot de
-  passe. Il n'est pas filtré par adresse source.
+- **Pare-feu** : la sortie des machines n'est pas filtrée. Dans le réseau
+  overlay, le sens des connexions n'est contrôlé que pour TCP.
 - **`/metrics` est servi sur le port public**, derrière un mot de passe.
 - **Docker Hub** limite les tirages à 100 par heure et par adresse IP,
   partagée ici. Les images tierces sont copiées une fois dans le registry

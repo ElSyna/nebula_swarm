@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Controle de l'exposition : quels ports repondent sur chaque noeud.
 #   ./scripts/exposition.sh
-# Attendu : 80 sur les trois noeuds (edge, seul port publie par le cluster).
-# 5000 repond sur le manager : c'est le registry, installe hors cluster.
+# Vu depuis le manager, qui est un noeud du cluster. Attendu : 80 (edge, seul
+# port publie) sur les noeuds tier=app, ferme sur le noeud de donnees. 5000
+# (registry, hors cluster) ne repond qu'aux noeuds. La vue depuis l'exterieur
+# est donnee par ./cluster/25-parefeu.sh verif, sur le poste.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 sur_manager
