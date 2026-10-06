@@ -67,6 +67,7 @@ remplacer quand le bus a redémarré.
 | `GET /health/comptes`, `GET /health/publications` | comptes, publications | `/health` |
 | `GET /api/health` | comptes | `/health` |
 | `GET /metrics` | edge | indicateurs, mot de passe exigé |
+| `/grafana` | grafana (stack `monitoring`) | tableaux de bord, mot de passe exigé |
 
 `worker-medias` n'est pas routé : sa route `/health` ne sert qu'à la sonde
 de santé du conteneur.
@@ -103,6 +104,7 @@ Aucun identifiant dans le dépôt. Les secrets sont créés sur le manager par
 | `nebula_bus_password` | publications, worker-medias | mot de passe RabbitMQ |
 | `nebula_bus_definitions` | bus | utilisateur (empreinte du mot de passe), file et politique des messages en erreur |
 | `edge_admin_users` | edge | fichier htpasswd de la route `/metrics` |
+| `nebula_grafana_password` | grafana | mot de passe du compte `admin` de Grafana |
 
 Les applications ne lisent `AMQP_URL` et `REDIS_URL` que dans leur
 environnement. [config/entrypoint.sh](config/entrypoint.sh), monté comme
@@ -115,6 +117,8 @@ dans `docker service inspect`.
 | `nebula_entrypoint_v1` | `config/entrypoint.sh` |
 | `nebula_db_init_v1` | `db/init.sql` (schéma, exécuté sur un volume vide) |
 | `nebula_bus_conf_v1` | `config/rabbitmq.conf` |
+| `nebula_prometheus_v1` | `config/prometheus.yml` |
+| `nebula_grafana_source_v1`, `nebula_grafana_tableaux_v1`, `nebula_grafana_tableau_v2` | `config/grafana/` : source de données, chargement et tableau de bord |
 
 Une config Swarm est immuable : pour en changer le contenu, changer le
 suffixe de version dans `swarm/stack.nebula.yml`.
@@ -219,7 +223,8 @@ Sur le manager, dans `~/nebula`. `make help` liste les commandes.
 | Ports qui répondent sur chaque nœud | `make exposition` |
 | Ajouter un service | `make service NOM=... IMAGE=... PORT=...` |
 | Copier une image publique dans le registry | `make image I=nginx:1.29-alpine` |
-| Indicateurs (requêtes et codes par service) | `curl -u admin http://<nœud>/metrics` (mot de passe demandé) |
+| Tableaux de bord | `http://<nœud>/grafana` |
+| Indicateurs bruts de l'edge | `curl -u admin http://<nœud>/metrics` (mot de passe demandé) |
 
 **Messages en erreur.** Un message que le worker rejette est renvoyé par
 RabbitMQ dans la file `publications.erreurs` au lieu d'être détruit. `make
@@ -232,6 +237,38 @@ Les fichiers de ce dossier sont fusionnés avec la stack : les réseaux et les
 secrets sont déjà déclarés, les sept autres services ne sont pas redémarrés,
 l'edge n'est pas modifié. L'image peut être donnée sous son nom public :
 elle est d'abord copiée dans le registry privé.
+
+## Supervision
+
+Une troisième stack, `monitoring` ([swarm/stack.monitoring.yml](swarm/stack.monitoring.yml)),
+est déployée par `make deploy` après l'application et sans la retarder.
+
+![Tableau de bord Nebula dans Grafana](docs/grafana.png)
+
+| Service | Rôle | Placement |
+|---|---|---|
+| `prometheus` | interroge les sources toutes les 15 s, garde 7 jours d'historique | manager (volume local) |
+| `grafana` | affiche le tableau de bord Nebula | `tier=app` |
+| `node-exporter` | processeur, mémoire, disque de chaque machine | une instance par nœud |
+| `cadvisor` | processeur et mémoire de chaque conteneur | une instance par nœud |
+
+- **Quatre sources** : l'edge (requêtes, erreurs, durées, par service), les
+  machines, les conteneurs (par service Swarm, avec leur version) et le bus
+  (messages et consommateurs par file, dont `publications.erreurs`).
+- **Accès** : `http://<nœud>/grafana`, compte `admin`, mot de passe dans
+  `~/.nebula/identifiants` sur le manager. Par le tunnel du poste :
+  `http://localhost:18080/grafana`.
+- **Aucun port publié.** Grafana est routé par l'edge ; Prometheus n'est
+  joignable que sur le réseau interne.
+- **Rien à sauvegarder dans Grafana** : la source de données et le tableau de
+  bord sont des fichiers du dépôt (`config/grafana/`), montés comme configs
+  Swarm. Le tableau est produit par `scripts/tableau-grafana.py`.
+- **Pare-feu** : Prometheus, sur le manager, ouvre les connexions vers les
+  sources de worker1 (ports 15692, 9100, 8080). Le sens unique est conservé.
+- **Grafana 12 et non 13** : à partir de la 13, la connexion à Prometheus
+  n'est plus dans l'image et se télécharge depuis Internet à chaque démarrage.
+
+Preuve : [docs/preuves/supervision.txt](docs/preuves/supervision.txt).
 
 ## Hypothèses et limites
 
@@ -246,7 +283,10 @@ elle est d'abord copiée dans le registry privé.
 - **Pas de chiffrement du point d'entrée** : HTTP sur le port 80.
 - **Pare-feu** : la sortie des machines n'est pas filtrée. Dans le réseau
   overlay, le sens des connexions n'est contrôlé que pour TCP.
-- **`/metrics` est servi sur le port public**, derrière un mot de passe.
+- **`/metrics` et `/grafana` sont servis sur le port public**, chacun derrière
+  son mot de passe, sans filtrage par adresse.
+- **L'historique de Prometheus** est sur un volume local au manager, 7 jours.
+  Il n'est pas sauvegardé.
 - **Docker Hub** limite les tirages à 100 par heure et par adresse IP,
   partagée ici. Les images tierces sont copiées une fois dans le registry
   privé depuis un miroir public (`infra/images.txt`). Seule l'image de

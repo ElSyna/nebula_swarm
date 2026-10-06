@@ -208,6 +208,8 @@ Preuve : [scenario-10-ajout-service.txt](preuves/scenario-10-ajout-service.txt).
 - [livraison-construction.txt](preuves/livraison-construction.txt) :
   construction, analyse, tag et publication de v1.1.0 ; refus d'un tag déjà
   publié ; refus de publication quand l'analyse dépasse le seuil.
+- [supervision.txt](preuves/supervision.txt) : services de supervision,
+  sources lues par Prometheus, accès à Grafana, valeur de chaque graphique.
 - [sauvegarde-planifiee.txt](preuves/sauvegarde-planifiee.txt) : sauvegarde
   déclenchée par le minuteur, restaurée, et rétention.
 - [registry.txt](preuves/registry.txt) : contenu du registry, refus sans

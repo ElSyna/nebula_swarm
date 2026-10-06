@@ -141,6 +141,7 @@ une connexion vers la destination, pas l'inverse.
 | chaque nœud | chaque nœud | 7946/tcp et udp | découverte entre nœuds | symétrique |
 | chaque nœud | chaque nœud | 4789/udp | transport du réseau overlay | symétrique, filtré à l'intérieur : lignes suivantes |
 | conteneurs de manager et worker2 | conteneurs de worker1 | TCP 5432, 5672, 15672, dans l'overlay | base et bus | refusé : worker1 n'ouvre aucune connexion TCP vers les nœuds applicatifs |
+| Prometheus (manager) | conteneurs de worker1 | TCP 15692, 9100, 8080, dans l'overlay | indicateurs du bus, de la machine, des conteneurs | refusé |
 | conteneurs de manager | conteneurs de worker2 | TCP, dans l'overlay | services sans état entre eux, edge vers les services | autorisé (même niveau) |
 
 - **Le sens dans le réseau overlay.** Le transport VXLAN (4789/udp) circule
@@ -206,7 +207,7 @@ Ce qui n'est pas dans le dépôt, et où cela se trouve sur le manager :
 |---|---|
 | Autorité et certificat du registry, fichier htpasswd | `/srv/nebula/registry/` |
 | Mot de passe administrateur de Portainer | `/srv/nebula/portainer/` |
-| Identifiants à connaître d'un humain (registry, Portainer, edge) | `~/.nebula/identifiants` (mode 600) |
+| Identifiants à connaître d'un humain (registry, Portainer, edge, Grafana) | `~/.nebula/identifiants` (mode 600) |
 | Sauvegardes de la base | `/srv/nebula/backups/` |
 | Secrets applicatifs | dans le Swarm (`docker secret ls`) |
 

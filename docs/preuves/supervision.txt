@@ -1,16 +1,15 @@
 # Supervision : Prometheus et Grafana
-# releve du 2026-10-06 10:27 UTC, sur le manager
+# releve du 2026-10-06 10:30 UTC, sur le manager
 
 $ docker stack ps monitoring --filter desired-state=running
-NAME                                                 IMAGE                                              NODE      CURRENT STATE
-monitoring_cadvisor        registry.local:5000/mirror/cadvisor:v0.55.1        worker1   Running 44 seconds ago
-monitoring_cadvisor        registry.local:5000/mirror/cadvisor:v0.55.1        manager   Running 42 seconds ago
-monitoring_cadvisor        registry.local:5000/mirror/cadvisor:v0.55.1        worker2   Running 42 seconds ago
-monitoring_grafana.1                                 registry.local:5000/mirror/grafana:12.4.12         worker2   Running about a minute ago
-monitoring_node-exporter   registry.local:5000/mirror/node-exporter:v1.12.1   worker1   Running about a minute ago
-monitoring_node-exporter   registry.local:5000/mirror/node-exporter:v1.12.1   manager   Running about a minute ago
-monitoring_node-exporter   registry.local:5000/mirror/node-exporter:v1.12.1   worker2   Running about a minute ago
-monitoring_prometheus.1                              registry.local:5000/mirror/prometheus:v3.15.0      manager   Running about a minute ago
+monitoring_cadvisor       mirror/cadvisor:v0.55.1       worker1  Running 2 minutes ago
+monitoring_cadvisor       mirror/cadvisor:v0.55.1       manager  Running 2 minutes ago
+monitoring_cadvisor       mirror/cadvisor:v0.55.1       worker2  Running 2 minutes ago
+monitoring_grafana.1      mirror/grafana:12.4.12        manager  Running about a minute ago
+monitoring_node-exporter  mirror/node-exporter:v1.12.1  worker1  Running 3 minutes ago
+monitoring_node-exporter  mirror/node-exporter:v1.12.1  manager  Running 3 minutes ago
+monitoring_node-exporter  mirror/node-exporter:v1.12.1  worker2  Running 3 minutes ago
+monitoring_prometheus.1   mirror/prometheus:v3.15.0     manager  Running 3 minutes ago
 
 $ docker service ls   (aucun port publie par la supervision)
 NAME                       MODE         REPLICAS   PORTS
@@ -22,9 +21,9 @@ monitoring_prometheus      replicated   1/1
 
 # sources lues par Prometheus (API de Prometheus)
    bus         http://bus:15692/metrics/per-object          up
+   conteneurs  http://10.0.2.31:8080/metrics                up
    conteneurs  http://10.0.2.33:8080/metrics                up
    conteneurs  http://10.0.2.32:8080/metrics                up
-   conteneurs  http://10.0.2.31:8080/metrics                up
    edge        http://10.0.1.3:8082/metrics                 up
    edge        http://10.0.1.4:8082/metrics                 up
    machines    http://10.0.2.27:9100/metrics                up
@@ -44,12 +43,17 @@ version de Grafana : 12.4.12 | base : ok
    Requêtes abouties, 5 min                   1 | =100
    Messages en erreur                         1 | publications.erreurs=4
    Workers à l'écoute                         1 | publications=2
-   Requêtes par seconde, par service          2 | comptes=10.6, publications=10.4
-   Erreurs par seconde, par service et code   0 | 
-   Durée de réponse, 95e centile              2 | comptes=0.095, publications=0.095
-   Instances par service et version           3 | comptes v1.0.0=7, publications v1.0.0=7, worker-medias v1.0.0=4
-   Mémoire par service                       11 | edge_traefik=1.23e+08, monitoring_cadvisor=1.51e+08, monitoring_grafana=3.08e+08, monitoring_node-exporter=5.87e+07, m
-   Processeur par service                    10 | edge_traefik=0.0647, monitoring_cadvisor=0.0374, monitoring_grafana=0.0502, monitoring_node-exporter=0.00152, monitori
+   Requêtes par seconde, par service          3 | comptes=10.7, grafana=0.0222, publications=10.4
+   Erreurs par seconde, par service et code   1 | grafana 401=0
+   Durée de réponse, 95e centile              3 | comptes=0.095, grafana=0.29, publications=0.095
+   Instances par service et version           3 | comptes v1.0.0=3, publications v1.0.0=3, worker-medias v1.0.0=2
+   Mémoire par service                       11 | edge_traefik=5.71e+07, monitoring_cadvisor=1.25e+08, monitoring_grafana=1.28e+08, monitoring_node-exporter=3.53e+07, m
+   Processeur par service                    11 | edge_traefik=0.0774, monitoring_cadvisor=0.0511, monitoring_grafana=0.0626, monitoring_node-exporter=0.005, monitoring
+   Processeur utilisé                         3 | manager=57.4, worker1=7.11, worker2=13.2
+   Mémoire utilisée                           3 | manager=49.5, worker1=17.7, worker2=36.9
+   Disque utilisé                             3 | manager=47.4, worker1=15.9, worker2=34
+   Messages en attente, par file              2 | publications.erreurs=4, publications=0
+   Consommateurs, par file                    2 | publications.erreurs=0, publications=2
 
 # pare-feu : les trois ports de collecte sont ouverts vers le noeud de donnees, dans un seul sens
 [worker1] nft : vxlan tcp dport != { 5432, 5672, 8080, 9100, 15672, 15692 }
