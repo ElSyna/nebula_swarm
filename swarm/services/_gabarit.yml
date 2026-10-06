@@ -3,8 +3,9 @@
 #
 #   make service NOM=whoami IMAGE=traefik/whoami:v1.11 PORT=80
 #
-# copie ce fichier en swarm/services/<nom>.yml, remplace NOM, IMAGE et PORT,
-# puis redeploie. Les fichiers de ce dossier sont fusionnes avec
+# copie l'image dans le registry prive si elle n'y est pas, copie ce fichier
+# en swarm/services/<nom>.yml en remplacant NOM, IMAGE et PORT, puis
+# redeploie. Les fichiers de ce dossier sont fusionnes avec
 # swarm/stack.nebula.yml : reseaux et secrets y sont deja declares, et les
 # services existants, inchanges, ne sont pas redemarres. L'edge n'est pas
 # modifie : le routage est porte par les labels ci-dessous.

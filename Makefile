@@ -10,7 +10,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help secrets build deploy status smoke charge logs scale update rollback \
-        rebalance backup restore bus exposition drill service destroy dev dev-down
+        rebalance backup restore bus exposition drill image service destroy dev dev-down
 
 help: ## Affiche cette aide
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[1m%-11s\033[0m %s\n",$$1,$$2}'
@@ -49,6 +49,8 @@ exposition: ## Ports qui repondent sur chaque noeud
 	./scripts/exposition.sh
 drill: ## Version defectueuse puis retour arriere      (S=comptes M=sonde|crash)
 	./scripts/drill-rollback.sh $(or $(S),comptes) $(or $(M),sonde)
+image: ## Copie une image publique dans le registry    (I=nginx:1.29-alpine)
+	./infra/mirror.sh $(I)
 service: ## Ajoute un service                           (NOM=whoami IMAGE=traefik/whoami:v1.11 PORT=80)
 	./scripts/add-service.sh $(NOM) $(IMAGE) $(PORT)
 destroy: ## Retire les stacks (volumes et secrets conserves)
