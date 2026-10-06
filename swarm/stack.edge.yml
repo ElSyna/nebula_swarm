@@ -37,8 +37,9 @@ services:
       - --metrics.prometheus=true
       - --metrics.prometheus.manualRouting=true
     ports:
-      # Le seul port publie du cluster. mode ingress : il repond sur les trois
-      # noeuds et la charge est repartie entre les replicas de l'edge.
+      # Le seul port publie du cluster. mode ingress : chaque noeud l'ecoute et
+      # la charge est repartie entre les replicas de l'edge. Le pare-feu le
+      # ferme sur le noeud de donnees (cluster/25-parefeu.sh).
       - target: 80
         published: 80
         mode: ingress

@@ -1,7 +1,7 @@
 # Les dix scénarios de vérification
 
 Pour chaque scénario : les commandes à lancer, ce qu'elles doivent montrer,
-et la sortie relevée sur le cluster le 5 octobre 2026 (dossier
+et la sortie relevée sur le cluster les 5 et 6 octobre 2026 (dossier
 [preuves/](preuves/)).
 
 Sauf mention contraire, les commandes se lancent sur le manager, dans
