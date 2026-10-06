@@ -47,7 +47,11 @@ def barres(titre, x, w, cibles, unite="percent", desc=None):
     p["fieldConfig"]["defaults"].update({"min": 0, "max": 100, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None}, {"color": "orange", "value": 75}, {"color": "red", "value": 90}]}})
     return p
 
-NOM = ' * on (instance) group_left (nodename) node_uname_info'
+# Nom de la machine pour une adresse. Apres un redeploiement, une meme adresse
+# peut avoir ete portee par deux machines dans la fenetre de lecture : on ne
+# garde que le nom le plus recent, sinon Prometheus refuse la jointure.
+NOM = (' * on (instance) group_left (nodename) '
+       '(node_uname_info and on (instance, nodename) topk by (instance) (1, timestamp(node_uname_info)))')
 ROUTE = 'label_replace(%s, "service", "$1", "service", "(.*)@swarm")'
 REQ = 'traefik_service_requests_total'
 

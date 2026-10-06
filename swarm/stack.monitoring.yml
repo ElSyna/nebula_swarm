@@ -176,7 +176,7 @@ configs:
     name: nebula_grafana_tableaux_v1
     file: ../config/grafana/tableaux.yml
   grafana_tableau_nebula:
-    name: nebula_grafana_tableau_v2
+    name: nebula_grafana_tableau_v3
     file: ../config/grafana/nebula.json
 
 secrets:

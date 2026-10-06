@@ -790,7 +790,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "100 * (1 - avg by (nodename) (rate(node_cpu_seconds_total{mode=\"idle\"}[1m]) * on (instance) group_left (nodename) node_uname_info))",
+     "expr": "100 * (1 - avg by (nodename) (rate(node_cpu_seconds_total{mode=\"idle\"}[1m]) * on (instance) group_left (nodename) (node_uname_info and on (instance, nodename) topk by (instance) (1, timestamp(node_uname_info)))))",
      "legendFormat": "{{nodename}}",
      "instant": false
     }
@@ -844,7 +844,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "max by (nodename) (100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * on (instance) group_left (nodename) node_uname_info)",
+     "expr": "max by (nodename) (100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * on (instance) group_left (nodename) (node_uname_info and on (instance, nodename) topk by (instance) (1, timestamp(node_uname_info))))",
      "legendFormat": "{{nodename}}",
      "instant": false
     }
@@ -898,7 +898,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "max by (nodename) (100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * on (instance) group_left (nodename) node_uname_info)",
+     "expr": "max by (nodename) (100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * on (instance) group_left (nodename) (node_uname_info and on (instance, nodename) topk by (instance) (1, timestamp(node_uname_info))))",
      "legendFormat": "{{nodename}}",
      "instant": true
     }

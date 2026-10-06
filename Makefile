@@ -10,7 +10,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help secrets build deploy status smoke charge logs scale update rollback \
-        rebalance backup restore bus exposition drill image service destroy dev dev-down
+        rebalance backup restore bus supervision exposition drill image service destroy dev dev-down
 
 help: ## Affiche cette aide
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[1m%-11s\033[0m %s\n",$$1,$$2}'
@@ -45,6 +45,8 @@ restore: ## Restaure la base                            (F=fichier, defaut : la 
 	./scripts/restore.sh $(F)
 bus: ## Messages par file, dont la file des erreurs
 	./scripts/bus.sh files
+supervision: ## Verifie Prometheus et chaque graphique de Grafana
+	./scripts/verif-supervision.sh
 exposition: ## Ports qui repondent sur chaque noeud
 	./scripts/exposition.sh
 drill: ## Version defectueuse puis retour arriere      (S=comptes M=sonde|crash)
