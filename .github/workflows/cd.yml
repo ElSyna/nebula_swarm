@@ -7,6 +7,8 @@
 # publiee par la CI, a l'identique, qui est deployee.
 # ===========================================================================
 name: CD
+# Le tag deploye apparait dans la liste des executions.
+run-name: CD ${{ inputs.tag }}
 
 on:
   workflow_dispatch:
