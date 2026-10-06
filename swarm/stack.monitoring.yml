@@ -93,8 +93,10 @@ services:
       placement:
         constraints: [node.labels.tier == app]
       resources:
-        limits: { cpus: "0.50", memory: 320M }
-        reservations: { memory: 96M }
+        # Grafana depasse 320 Mo au demarrage (sa base en memoire comprise) :
+        # avec cette limite le conteneur etait tue (code 137).
+        limits: { cpus: "0.75", memory: 640M }
+        reservations: { memory: 256M }
       restart_policy: { condition: any, delay: 5s }
       update_config:
         order: start-first
