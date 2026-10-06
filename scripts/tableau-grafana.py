@@ -71,11 +71,16 @@ y[0] += 8
 
 # ------------------------------------------------------------------ services
 ligne("Services")
-VERSION = ('count by (service, version) (count by (service, version, name) (label_replace(label_replace(container_memory_working_set_bytes{%s=~"nebula_(comptes|publications|worker-medias)"}, '
-           '"version", "$1", "image", "^[^@]*:([^:@/]+)(@.*)?$"), "service", "$1", "%s", "nebula_(.*)")))' % (SVC, SVC))
+# Un conteneur compte s'il a ete vu depuis moins d'une minute : apres un
+# redemarrage de Prometheus, les series des conteneurs disparus restent
+# lisibles cinq minutes et fausseraient les totaux.
+VIVANT = '(time() - container_last_seen{%s}) < 60'
+VERSION = ('count by (service, version) (count by (service, version, name) (label_replace(label_replace(' + VIVANT % ('%s=~"nebula_(comptes|publications|worker-medias)"' % SVC) + ', '
+           '"version", "$1", "image", "^[^@]*:([^:@/]+)(@.*)?$"), "service", "$1", "%s", "nebula_(.*)")))' % SVC)
+EN_VIE = ' and on (name) (' + VIVANT % ('%s!=""' % SVC) + ')'
 courbe("Instances par service et version", 0, 8, [(VERSION, "{{service}} {{version}}")], "short", desc="Pendant une mise à jour, les instances de l'ancienne version cèdent la place à celles de la nouvelle, une par une.", empile=True, pas=True)
-courbe("Mémoire par service", 8, 8, [('sum by (%s) (max by (%s, name) (container_memory_working_set_bytes{%s!=""}))' % (SVC, SVC, SVC), "{{%s}}" % SVC)], "bytes")
-courbe("Processeur par service", 16, 8, [('sum by (%s) (max by (%s, name) (rate(container_cpu_usage_seconds_total{%s!=""}[2m])))' % (SVC, SVC, SVC), "{{%s}}" % SVC)], "short", desc="En cœurs de processeur utilisés.")
+courbe("Mémoire par service", 8, 8, [('sum by (%s) (max by (%s, name) (container_memory_working_set_bytes{%s!=""}%s))' % (SVC, SVC, SVC, EN_VIE), "{{%s}}" % SVC)], "bytes")
+courbe("Processeur par service", 16, 8, [('sum by (%s) (max by (%s, name) (rate(container_cpu_usage_seconds_total{%s!=""}[2m])%s))' % (SVC, SVC, SVC, EN_VIE), "{{%s}}" % SVC)], "short", desc="En cœurs de processeur utilisés.")
 y[0] += 8
 
 # ------------------------------------------------------------------ machines

@@ -611,7 +611,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "count by (service, version) (count by (service, version, name) (label_replace(label_replace(container_memory_working_set_bytes{container_label_com_docker_swarm_service_name=~\"nebula_(comptes|publications|worker-medias)\"}, \"version\", \"$1\", \"image\", \"^[^@]*:([^:@/]+)(@.*)?$\"), \"service\", \"$1\", \"container_label_com_docker_swarm_service_name\", \"nebula_(.*)\")))",
+     "expr": "count by (service, version) (count by (service, version, name) (label_replace(label_replace((time() - container_last_seen{container_label_com_docker_swarm_service_name=~\"nebula_(comptes|publications|worker-medias)\"}) < 60, \"version\", \"$1\", \"image\", \"^[^@]*:([^:@/]+)(@.*)?$\"), \"service\", \"$1\", \"container_label_com_docker_swarm_service_name\", \"nebula_(.*)\")))",
      "legendFormat": "{{service}} {{version}}",
      "instant": false
     }
@@ -670,7 +670,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "sum by (container_label_com_docker_swarm_service_name) (max by (container_label_com_docker_swarm_service_name, name) (container_memory_working_set_bytes{container_label_com_docker_swarm_service_name!=\"\"}))",
+     "expr": "sum by (container_label_com_docker_swarm_service_name) (max by (container_label_com_docker_swarm_service_name, name) (container_memory_working_set_bytes{container_label_com_docker_swarm_service_name!=\"\"} and on (name) ((time() - container_last_seen{container_label_com_docker_swarm_service_name!=\"\"}) < 60)))",
      "legendFormat": "{{container_label_com_docker_swarm_service_name}}",
      "instant": false
     }
@@ -723,7 +723,7 @@
       "type": "prometheus",
       "uid": "prometheus"
      },
-     "expr": "sum by (container_label_com_docker_swarm_service_name) (max by (container_label_com_docker_swarm_service_name, name) (rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name!=\"\"}[2m])))",
+     "expr": "sum by (container_label_com_docker_swarm_service_name) (max by (container_label_com_docker_swarm_service_name, name) (rate(container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name!=\"\"}[2m]) and on (name) ((time() - container_last_seen{container_label_com_docker_swarm_service_name!=\"\"}) < 60)))",
      "legendFormat": "{{container_label_com_docker_swarm_service_name}}",
      "instant": false
     }
