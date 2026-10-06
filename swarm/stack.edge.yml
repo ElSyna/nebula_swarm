@@ -43,7 +43,8 @@ services:
         published: 80
         mode: ingress
     volumes:
-      # Lecture seule : Traefik ne fait que lire l'etat du cluster.
+      # Traefik lit l'etat du cluster par ce socket. ":ro" protege le fichier,
+      # pas l'API Docker : l'edge est le seul service a le monter.
       - /var/run/docker.sock:/var/run/docker.sock:ro
     secrets:
       - admin_users

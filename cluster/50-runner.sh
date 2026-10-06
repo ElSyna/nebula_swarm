@@ -17,6 +17,8 @@ if [ ! -x ./config.sh ]; then
   v=$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p')
   curl -fsSL -o runner.tgz "https://github.com/actions/runner/releases/download/v$v/actions-runner-linux-x64-$v.tar.gz"
   tar xzf runner.tgz && rm runner.tgz
+  # Bibliotheques requises par le runner (libicu sur Debian).
+  sudo DEBIAN_FRONTEND=noninteractive ./bin/installdependencies.sh >/dev/null
 fi
 [ -f .runner ] || ./config.sh --unattended --url "$REPO" --token "$JETON" --name "$(hostname)" --labels nebula --replace
 sudo ./svc.sh install "$USER" >/dev/null 2>&1 || true

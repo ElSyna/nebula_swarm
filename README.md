@@ -234,6 +234,9 @@ l'edge n'est pas modifié.
   Portainer vient de Docker Hub.
 - **Le runner** a accès au socket Docker du manager : le dépôt GitHub doit
   rester privé.
+- **L'edge monte le socket Docker du manager**, nécessaire pour lire les
+  labels des services. Le montage en lecture seule protège le fichier, pas
+  l'API Docker.
 - **Mot de passe de la base** : PostgreSQL le fixe à l'initialisation du
   volume. Recréer le secret `nebula_db_password` sans recréer le volume
   empêche les applications de se connecter.
