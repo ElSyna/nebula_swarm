@@ -20,4 +20,6 @@ public.ecr.aws/docker/library/busybox:1.37                   busybox:1.37
 quay.io/prometheus/prometheus:v3.15.0                        prometheus:v3.15.0
 quay.io/prometheus/node-exporter:v1.12.1                     node-exporter:v1.12.1
 gcr.io/cadvisor/cadvisor:v0.55.1                             cadvisor:v0.55.1
-docker.io/grafana/grafana:13.2.3                             grafana:13.2.3
+# Grafana 12 : la connexion a Prometheus est dans l'image. A partir de la 13
+# elle est telechargee depuis Internet a chaque demarrage.
+docker.io/grafana/grafana:12.4.12                            grafana:12.4.12

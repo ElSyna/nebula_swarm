@@ -48,7 +48,9 @@ services:
         failure_action: rollback
 
   grafana:
-    image: ${REGISTRY:-registry.local:5000}/mirror/grafana:13.2.3
+    # Grafana 12 et non 13 : a partir de la 13, la connexion a Prometheus n'est
+    # plus dans l'image, elle est telechargee depuis Internet au demarrage.
+    image: ${REGISTRY:-registry.local:5000}/mirror/grafana:12.4.12
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_password
@@ -61,6 +63,8 @@ services:
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      # Pas d'extension telechargee au demarrage.
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/tableaux/nebula.json
     secrets: [grafana_password]
     configs:
@@ -73,30 +77,27 @@ services:
       - source: grafana_tableau_nebula
         target: /etc/grafana/tableaux/nebula.json
     volumes:
-      # La base interne de Grafana vit en memoire. Sur disque, sa creation au
-      # premier demarrage depassait le delai de la sonde, et rien n'y est a
-      # conserver : source et tableau de bord viennent des fichiers ci-dessus.
+      # La base interne de Grafana vit en memoire : rien n'y est a conserver,
+      # la source et le tableau de bord viennent des fichiers ci-dessus. Sur
+      # disque, sa creation a chaque demarrage depassait le delai de la sonde.
       - type: tmpfs
         target: /var/lib/grafana
-        tmpfs: { size: 100000000 }
+        tmpfs: { size: 64000000 }
     networks: [edge_public, internal]
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
       interval: 15s
       timeout: 5s
       retries: 3
-      # Grafana met plus d'une minute a demarrer sur la plus petite machine.
-      start_period: 150s
+      start_period: 90s
       start_interval: 3s
     deploy:
       replicas: 1
       placement:
         constraints: [node.labels.tier == app]
       resources:
-        # Grafana depasse 320 Mo au demarrage (sa base en memoire comprise) :
-        # avec cette limite le conteneur etait tue (code 137).
-        limits: { cpus: "0.75", memory: 640M }
-        reservations: { memory: 256M }
+        limits: { cpus: "0.75", memory: 384M }
+        reservations: { memory: 128M }
       restart_policy: { condition: any, delay: 5s }
       update_config:
         order: start-first
