@@ -2,6 +2,10 @@
 # Sauvegarde la base dans un fichier, sur le manager. A executer sur le manager.
 #   ./scripts/backup.sh
 #
+# Lance chaque jour par le minuteur systemd nebula-sauvegarde
+# (cluster/45-sauvegardes.sh), ou a la main par make backup.
+# Seules les BACKUP_KEEP sauvegardes les plus recentes sont conservees.
+#
 # La base tourne sur le noeud tier=data. Une tache ponctuelle Swarm, placee
 # sur le manager et branchee sur le reseau interne, execute pg_dump : la
 # sauvegarde est ainsi rangee sur une autre machine que la base.
@@ -10,6 +14,7 @@ set -euo pipefail
 sur_manager
 
 DEST=${BACKUP_DIR:-/srv/nebula/backups}
+GARDER=${BACKUP_KEEP:-14}
 FICHIER=nebula-$(date -u +%Y%m%dT%H%M%SZ).dump
 mkdir -p "$DEST"
 
@@ -29,3 +34,11 @@ job nebula_backup \
   ' || erreur "la sauvegarde a echoue"
 
 ls -lh "$DEST/$FICHIER"
+
+# Menage, seulement apres une sauvegarde reussie : on ne supprime jamais
+# d'anciennes sauvegardes sans en avoir une nouvelle.
+anciennes=$(ls -1t "$DEST"/nebula-*.dump | tail -n +$((GARDER + 1)))
+if [ -n "$anciennes" ]; then
+  echo "$anciennes" | xargs rm -f --
+  echo "   $(echo "$anciennes" | wc -l | tr -d ' ') ancienne(s) sauvegarde(s) supprimee(s), $GARDER conservees"
+fi
